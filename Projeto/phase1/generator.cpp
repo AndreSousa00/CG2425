@@ -216,6 +216,71 @@ void box_generator(float length, float division, char* filename)
     fclose(f); //Fechamos o ficheiro que abrimos em cima
 }
 
+void cone(float radius, float height, int slices, int stacks, char* filename) 
+{
+	FILE* f;
+	f = fopen(filename, "w+");
+
+    // Consoante o número de slices, vamos determinar o angulo de cada slice
+    float angleBase = 2 * M_PI / slices;
+    // Consoante o número de stacks, vamos determinar a altura de cada stack
+    float angleSides = height / stacks;
+
+    // Determinar o número total de pontos necessários para formar o cone
+    int totalNumDots = 3 * 3 * slices + 3 * 6 * stacks * slices;
+    //3*3*slices -> base
+    //3*6*stacks*slices -> sides
+
+    if (f){
+
+        fprintf(f,"%d \n",totalNumDots);
+
+        //base
+        for (int i = 0; i < slices; i++) {
+            float angleBaseTemp = i * angleBase;
+            fprintf(f, "%f %f %f \n", radius * sin(angleBaseTemp), 0.0f, radius * cos(angleBaseTemp));
+            fprintf(f, "%f %f %f \n", 0.0f, 0.0, 0.0f);
+            fprintf(f, "%f %f %f \n", radius * sin(angleBaseTemp + angleBase), 0.0f, radius * cos(angleBaseTemp + angleBase));
+        }
+
+        //sides
+        for (int i = 0; i < stacks; i++) {
+            float sides1 = i * angleSides;
+			float sides2 = (i + 1) * angleSides;
+			float rTemp1 = radius - ((radius / stacks) * i);
+			float rTemp2 = radius - ((radius / stacks) * (i + 1));
+			for (int j = 0; j < slices; j++) {
+				float angleBaseTemp2 = j * angleBase;
+
+				float x1 = rTemp1 * sin(angleBaseTemp2);
+				float x2 = rTemp2 * sin(angleBaseTemp2 + angleBase);
+				float x3 = rTemp2 * sin(angleBaseTemp2);
+				float x4 = rTemp1 * sin(angleBaseTemp2 + angleBase);
+				float y1 = sides1;
+				float y2 = sides2;
+				float z1 = rTemp1 * cos(angleBaseTemp2);
+				float z2 = rTemp2 * cos(angleBaseTemp2 + angleBase);
+				float z3 = rTemp2 * cos(angleBaseTemp2);
+				float z4 = rTemp1 * cos(angleBaseTemp2 + angleBase);
+
+				fprintf(f, "%f %f %f \n", x1, y1, z1);
+				fprintf(f, "%f %f %f \n", x2, y2, z2);
+				fprintf(f, "%f %f %f \n", x3, y2, z3);
+
+				fprintf(f, "%f %f %f \n", x1, y1, z1);
+				fprintf(f, "%f %f %f \n", x4, y1, z4);
+				fprintf(f, "%f %f %f \n", x2, y2, z2);
+            }
+        }
+        std::cout << filename << " Created Sucessfully!\n";
+    }
+    else 
+    {
+        printf("ERROR: Creating .3d file -> Cone\n");
+    }
+
+}
+
 int main(int argc, char* argv[]) {
 
 	if (argc < 1)
