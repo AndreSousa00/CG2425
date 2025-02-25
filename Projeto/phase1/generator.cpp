@@ -37,8 +37,7 @@ int plane_generator(float length, float division, char* filename){
     if(f) // Se o ficheiro for válido
     {
         //4ºPasso: Vamos guardar no ficheiro .3d o número total de de pontos
-        fprintf(f,"%d \n",totalNumDots);
-        //PS: se der erro exprimentar multiplicar por 3
+        fprintf(f,"%d \n",totalNumDots * 3);
 
         //5ºPasso: Para conseguirmos que o plano esteja centrado na origem, vamos
         //começar por construí-lo a partir do eixo negativo do x e z, pois a partir
@@ -112,8 +111,7 @@ void box_generator(float length, float division, char* filename)
     if(f) // Se o ficheiro for válido
     {
         //Vamos guardar no ficheiro .3d o número total de de pontos
-        fprintf(f,"%d \n",totalNumDots);
-        //PS: se der erro exprimentar multiplicar por 3
+        fprintf(f,"%d \n",totalNumDots * 3);
 
         //Para conseguirmos que a box esteja centrada na origem, vamos
         //começar por construí-la a partir do eixo negativo do x e z, pois a partir
@@ -347,18 +345,18 @@ int main(int argc, char* argv[]) {
 		box_generator(atof(argv[2]), atof(argv[3]), argv[4]);// length, division, filename 
 		return 0;
 	}
-	else if (strcmp(argv[1], "sphere") == 0)
-	{
-
-		sphere(atof(argv[2]), atoi(argv[3]), atoi(argv[4]), argv[5]);// radius, slices, stacks, filename 
-		return 0;
-	}
-	else if (strcmp(argv[1], "cone") == 0)
+    else if (strcmp(argv[1], "cone") == 0)
 	{
 
 		cone(atof(argv[2]), atof(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6]); //radius, height, slices, stacks, filename
 		return 0;
 
+	}
+	else if (strcmp(argv[1], "sphere") == 0)
+	{
+
+		sphere(atof(argv[2]), atoi(argv[3]), atoi(argv[4]), argv[5]);// radius, slices, stacks, filename 
+		return 0;
 	}
 	else if (strcmp(argv[1], "all") == 0)
 	{

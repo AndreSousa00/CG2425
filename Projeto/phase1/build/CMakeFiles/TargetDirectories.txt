@@ -1,0 +1,4 @@
+/Users/jnf/Library/CloudStorage/OneDrive-Personal/Documentos/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase1/build/CMakeFiles/generator.dir
+/Users/jnf/Library/CloudStorage/OneDrive-Personal/Documentos/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase1/build/CMakeFiles/engine.dir
+/Users/jnf/Library/CloudStorage/OneDrive-Personal/Documentos/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase1/build/CMakeFiles/edit_cache.dir
+/Users/jnf/Library/CloudStorage/OneDrive-Personal/Documentos/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase1/build/CMakeFiles/rebuild_cache.dir
