@@ -281,6 +281,53 @@ void cone(float radius, float height, int slices, int stacks, char* filename)
 
 }
 
+void sphere(float radius, int slices, int stacks, char* filename) {
+	FILE* f;
+	f = fopen(filename, "w+");
+	float angleCirc = 2 * M_PI / slices;
+	float angleSides = M_PI / stacks;
+	int numVertices = 6 * stacks * slices; 
+
+	if (f) 
+	{
+		fprintf(f, "%d \n", 3 * numVertices);
+
+		for (int i = 0; i < stacks; i++) 
+		{
+			float angleSidesTemp = -(M_PI / 2) + i * angleSides;
+			float y1 = radius * sin(angleSidesTemp + angleSides);
+			float y2 = radius * sin(angleSidesTemp);
+
+			for (int j = 0; j < slices; j++) 
+			{
+				float angleCircTemp = j * angleCirc;
+				float x1 = radius * cos(angleSidesTemp + angleSides) * sin(angleCircTemp);
+				float x2 = radius * cos(angleSidesTemp) * sin(angleCircTemp);
+				float x3 = radius * cos(angleSidesTemp) * sin(angleCircTemp + angleCirc);
+				float x4 = radius * cos(angleSidesTemp + angleSides) * sin(angleCircTemp + angleCirc);
+				float z1 = radius * cos(angleSidesTemp + angleSides) * cos(angleCircTemp);
+				float z2 = radius * cos(angleSidesTemp) * cos(angleCircTemp);
+				float z3 = radius * cos(angleSidesTemp) * cos(angleCircTemp + angleCirc);
+				float z4 = radius * cos(angleSidesTemp + angleSides) * cos(angleCircTemp + angleCirc);
+
+				fprintf(f, "%f %f %f \n", x1, y1, z1);
+				fprintf(f, "%f %f %f \n", x2, y2, z2);
+				fprintf(f, "%f %f %f \n", x3, y2, z3);
+
+				fprintf(f, "%f %f %f \n", x1, y1, z1);
+				fprintf(f, "%f %f %f \n", x3, y2, z3);
+				fprintf(f, "%f %f %f \n", x4, y1, z4);
+			}
+		}
+		std::cout << filename << " Created Sucessfully!\n";
+	}
+	else 
+	{
+		printf("ERROR: Creating .3d file -> Sphere\n");
+	}
+	fclose(f);
+}
+
 int main(int argc, char* argv[]) {
 
 	if (argc < 1)
@@ -300,27 +347,27 @@ int main(int argc, char* argv[]) {
 		box_generator(atof(argv[2]), atof(argv[3]), argv[4]);// length, division, filename 
 		return 0;
 	}
-	//else if (strcmp(argv[1], "sphere") == 0)
-	//{
+	else if (strcmp(argv[1], "sphere") == 0)
+	{
 
-	//	sphere(atof(argv[2]), atoi(argv[3]), atoi(argv[4]), argv[5]);// radius, slices, stacks, filename 
-	//	return 0;
-	//}
-	//else if (strcmp(argv[1], "cone") == 0)
-	//{
+		sphere(atof(argv[2]), atoi(argv[3]), atoi(argv[4]), argv[5]);// radius, slices, stacks, filename 
+		return 0;
+	}
+	else if (strcmp(argv[1], "cone") == 0)
+	{
 
-	//	cone(atof(argv[2]), atof(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6]); //radius, height, slices, stacks, filename
-	//	return 0;
+		cone(atof(argv[2]), atof(argv[3]), atoi(argv[4]), atoi(argv[5]), argv[6]); //radius, height, slices, stacks, filename
+		return 0;
 
-	//}
+	}
 	else if (strcmp(argv[1], "all") == 0)
 	{
 		plane_generator((float)1, (float)3, "plane.3d");	//Guiao
 		box_generator((float)2, (float)3, "box.3d");		//Guiao
-		//sphere((float)1, 10, 10, "sphere.3d");	//Guiao
-		//cone((float)1, (float)2, 4, 3, "cone.3d");		//Guiao
-		//cone((float)1, (float)2, 4, 3, "cone_1_2_4_3.3d");		//test_1_1.xml && test_1_2.xml
-		//sphere((float)1, 10, 10, "sphere_1_10_10.3d");	//test_1_3.xml && test_1_5.xml
+		sphere((float)1, 10, 10, "sphere.3d");	//Guiao
+		cone((float)1, (float)2, 4, 3, "cone.3d");		//Guiao
+		cone((float)1, (float)2, 4, 3, "cone_1_2_4_3.3d");		//test_1_1.xml && test_1_2.xml
+		sphere((float)1, 10, 10, "sphere_1_10_10.3d");	//test_1_3.xml && test_1_5.xml
 		box_generator((float)2, (float)3, "box_2_3.3d");			//test_1_4.xml
 		plane_generator((float)1, (float)3, "plane_2_3.3d");		//test_1_5.xml
 
