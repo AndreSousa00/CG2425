@@ -23,7 +23,7 @@ int plane_generator(float length, float division, char* filename){
     //2º Passo: Temos um plano de tamanho lenght e vamos dividir no numero de 
     //divisões forncido. Em seguida vamos fazer lenght/divison e isto dar-nos-á
     //o tamanho de cada divisão
-    float eachSquareLength = length / division;
+    float eachSquareLength = (length + 1) / division;
 
     //3ºPasso: Determinar o numero de triangulos totais necessários para formar
     //o plano total
@@ -42,8 +42,8 @@ int plane_generator(float length, float division, char* filename){
         //5ºPasso: Para conseguirmos que o plano esteja centrado na origem, vamos
         //começar por construí-lo a partir do eixo negativo do x e z, pois a partir
         //dai vai construir para a "frente"
-        float x = -length / 2;
-		float z = -length / 2;
+        float x = -(length + 1) / 2;
+		float z = -(length + 1)/ 2;
 
         //6ºPasso: Fazemos um ciclo para começarmos a construir cada coluna
         for (int column = 0; column < division; column++){
@@ -69,7 +69,7 @@ int plane_generator(float length, float division, char* filename){
             z += eachSquareLength;
 
             //12º Passo: Resetamos o x para voltar à sua posição inicial
-            x = -length / 2;
+            x = -(length + 1) / 2;
         }
         //13º Passo: Mandar para o terminal que o ficheiro filename.3d foi criado 
         //com sucesso
