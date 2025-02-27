@@ -33,6 +33,12 @@ float* vertices;
 int N; //vertices number 
 int num;
 
+// Global variables for mouse interaction
+bool mouseLeftDown = false;
+bool mouseRightDown = false;
+bool mouseMiddleDown = false;
+int mouseX = 0, mouseY = 0;
+
 /*
 	Window size
 	@param 0 - width
@@ -259,51 +265,110 @@ int readXML(char* filename)
 
 // write function to process keyboard events
 void keysFunc(unsigned char key, int x, int y) {
-	switch (key)
-	{
-	case 's': //"Tras"
-		tz += 0.1;
-		break;
-	case 'w': //"Frente"w
-		tz -= 0.1;
-		break;
-	case 'r': //subir
-		ty += 0.1;
-		break;
-	case 'f': //descer
-		ty -= 0.1;
-		break;
-	case 'd': //direita
-		tx += 0.1;
-		break;
-	case 'a': //esquerda
-		tx -= 0.1;
-		break;
-	case 'q': //rodar esquerda
-		angle += 5;
-		break;
-	case 'e': //rodar direita
-		angle -= 5;
-		break;
-
-	case '1':
-		mode = GL_FILL;
-		break;
-	case '2':
-		mode = GL_LINE;
-		break;
-	case '3':
-		mode = GL_POINT;
-		break;
-	default:
-		glutPostRedisplay();
-		break;
-	}
+	switch (key) {
+	case 'd': angle += 5; break;
+	case 'a': angle -= 5; break;
+	case 'w': tx += 0.5; break;
+	case 's': tx -= 0.5; break;
+	case 'q': ty += 0.5; break;
+	case 'e': ty -= 0.5; break;
+	case 'z': tz += 0.5; break;
+	case 'x': tz -= 0.5; break;
+	case 'm': mode = GL_FILL; break;
+	case 'n': mode = GL_LINE; break;
+    case '+': 
+    case '=': // Allow = key (same physical key as +)
+        c_pos[2] -= 1.0f; // Zoom in - move camera closer
+        break;
+    case '-': 
+    case '_': // Allow _ key (same physical key as -)
+        c_pos[2] += 1.0f; // Zoom out - move camera further
+        break;
+    }
+	glutPostRedisplay();
 }
 
+// write function to process special keyboard events
+void specialKeysFunc(int key, int x, int y) {
+	switch (key) {
+	case GLUT_KEY_RIGHT: angle += 5; break;
+	case GLUT_KEY_LEFT: angle -= 5; break;
+	case GLUT_KEY_UP: tx += 0.5; break;
+	case GLUT_KEY_DOWN: tx -= 0.5; break;
+	}
+	glutPostRedisplay();
+}
 
+// Mouse button callback function
+void mouseFunc(int button, int state, int x, int y) {
+    // Update current mouse position
+    mouseX = x;
+    mouseY = y;
+    
+    // Handle button press/release
+    if (button == GLUT_LEFT_BUTTON) {
+        if (state == GLUT_DOWN) {
+            mouseLeftDown = true;
+        }
+        else if (state == GLUT_UP) {
+            mouseLeftDown = false;
+        }
+    }
+    else if (button == GLUT_RIGHT_BUTTON) {
+        if (state == GLUT_DOWN) {
+            mouseRightDown = true;
+        }
+        else if (state == GLUT_UP) {
+            mouseRightDown = false;
+        }
+    }
+    else if (button == GLUT_MIDDLE_BUTTON) {
+        if (state == GLUT_DOWN) {
+            mouseMiddleDown = true;
+        }
+        else if (state == GLUT_UP) {
+            mouseMiddleDown = false;
+        }
+    }
+    // Handle mouse wheel for zoom
+    else if (button == 3) {  // Scroll up
+        c_pos[2] -= 0.5f;  // Move camera closer to scene
+        glutPostRedisplay();
+    }
+    else if (button == 4) {  // Scroll down
+        c_pos[2] += 0.5f;  // Move camera further from scene
+        glutPostRedisplay();
+    }
+}
 
-
+// Mouse motion callback function (when buttons are pressed)
+void mouseMotionFunc(int x, int y) {
+    // Calculate the difference from the previous position
+    int deltaX = x - mouseX;
+    int deltaY = y - mouseY;
+    
+    // Update the stored position
+    mouseX = x;
+    mouseY = y;
+    
+    // Left button: rotation around Y and X axes
+    if (mouseLeftDown) {
+        angle += (float)deltaX * 0.2f;
+        glutPostRedisplay();
+    }
+    // Right button: zoom in/out
+    else if (mouseRightDown) {
+        // Move camera position for zoom effect
+        c_pos[2] += (float)deltaY * 0.1f;
+        glutPostRedisplay();
+    }
+    // Middle button: panning
+    else if (mouseMiddleDown) {
+        tx += (float)deltaX * 0.05f;
+        ty -= (float)deltaY * 0.05f;  // Invert Y for intuitive panning
+        glutPostRedisplay();
+    }
+}
 
 int main(int argc, char** argv) {
 
@@ -332,6 +397,9 @@ int main(int argc, char** argv) {
 
 	// put here the registration of the keyboard callbacks
 	glutKeyboardFunc(keysFunc);
+	glutSpecialFunc(specialKeysFunc);
+	glutMouseFunc(mouseFunc);
+	glutMotionFunc(mouseMotionFunc);
 
 
 	//  OpenGL settings
