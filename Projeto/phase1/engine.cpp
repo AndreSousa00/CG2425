@@ -330,15 +330,6 @@ void mouseFunc(int button, int state, int x, int y) {
             mouseMiddleDown = false;
         }
     }
-    // Handle mouse wheel for zoom
-    else if (button == 3) {  // Scroll up
-        c_pos[2] -= 0.5f;  // Move camera closer to scene
-        glutPostRedisplay();
-    }
-    else if (button == 4) {  // Scroll down
-        c_pos[2] += 0.5f;  // Move camera further from scene
-        glutPostRedisplay();
-    }
 }
 
 // Mouse motion callback function (when buttons are pressed)
