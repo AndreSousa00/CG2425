@@ -17,9 +17,8 @@
 #include <math.h>
 
 using namespace tinyxml2;
-/*
-	Drawing movement
-*/
+
+//Movimento de desenho
 float angle = 0;
 float tx = 0;
 float ty = 0;
@@ -27,71 +26,70 @@ float tz = 0;
 
 float mode = GL_LINE;
 
-int numPrimitives; // The number of primitives to be drawn ( how many .3d files where loaded)
+int numPrimitives;// O número de primitivas a serem desenhadas (quantos ficheiros .3d foram carregados)
 float** all_vertices;
 float* vertices;
-int N; //vertices number 
+int N;// número de vértices
 int num;
 
-// Global variables for mouse interaction
+//Variáveis globais para interação com o rato
 bool mouseLeftDown = false;
 bool mouseRightDown = false;
 bool mouseMiddleDown = false;
 int mouseX = 0, mouseY = 0;
 
 /*
-	Window size
-	@param 0 - width
-	@param 1 - height
+    Tamanho da janela
+    @param 0 - largura
+    @param 1 - altura
 */
 int w_size[2];
-//Camera Values
+// Valores da câmara
 float c_pos[3];
 float c_lAt[3];	
 float c_lUp[3];
-//Perspective values
+// Valores da perspetiva
 float c_proj[3]; 
 
-float radius, dist; //dist is the same as radius but y coord is 0
+float radius, dist;//dist é o mesmo que radius mas a coordenada y é 0
 float angleAlpha, angleBeta;
 
 
 void changeSize(int w, int h) {
 
-	// Prevent a divide by zero, when window is too short
-	// (you cant make a window with zero width).
+	// Prevenir uma divisão por zero, quando a janela é muito curta (não se pode fazer uma janela com largura zero).
 	if (h == 0)
 		h = 1;
 
-	// compute window's aspect ratio 
+	// Calcular o aspect ratio da janela
 	float ratio = w * 1.0 / h;
 
-	// Set the projection matrix as current
+	// Definir a matriz de projeção como atual
 	glMatrixMode(GL_PROJECTION);
-	// Load Identity Matrix
+	// Carregar a Matriz Identidade
 	glLoadIdentity();
 
-	// Set the viewport to be the entire window
+	// Definir o viewport para ser a janela inteira
 	glViewport(0, 0, w, h);
 
-	// Set perspective
+	// Definir a perspetiva
 	gluPerspective(c_proj[0], ratio, c_proj[1], c_proj[2]);
 
-	// return to the model view matrix mode
+	// Voltar ao modo de matriz de visualização do modelo
 	glMatrixMode(GL_MODELVIEW);
 }
 
 void Axis() {
 	glBegin(GL_LINES);
-	// X axis in red
+	// Eixo X em vermelho
 	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(100.0f, 0.0f, 0.0f);
-	// Y Axis in Green
+	// Eixo Y em verde
 	glColor3f(0.0f, 1.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 100.0f, 0.0f);
-	// Z Axis in Blue
+	// Eixo Z em azul
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 100.0f);
@@ -100,17 +98,17 @@ void Axis() {
 
 void renderScene(void) {
 
-	// clear buffers
+	// limpar buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// set the camera
+	// definir a câmara
 	glLoadIdentity();
 	gluLookAt(	c_pos[0], c_pos[1], c_pos[2],
 				c_lAt[0], c_lAt[1], c_lAt[2],
 				c_lUp[0], c_lUp[1], c_lUp[2]);
 	Axis();
 
-	// put the geometric transformations here
+	// colocar as transformações geométricas aqui
 		
 	glTranslated(tx, ty, tz);
 	glRotated(angle, 0, 1, 0);
@@ -118,8 +116,8 @@ void renderScene(void) {
 
 	for (int i = 0; i < numPrimitives; i++) {
 
-		for (int j = 1; j < (int)all_vertices[i][0]; j += 9) { //Starts at 1, because all_vertices[i][0] contains the number of vertices
-			glColor3f(0.729f, 0.333f, 0.827f); // Dark Fuschia
+		for (int j = 1; j < (int)all_vertices[i][0]; j += 9) { // Começa em 1, porque all_vertices[i][0] contém o número de vértices
+			glColor3f(0.729f, 0.333f, 0.827f); // Fúcsia Escuro
 			glBegin(GL_TRIANGLES);
 			glVertex3f(all_vertices[i][j], all_vertices[i][j + 1], all_vertices[i][j + 2]);
 			glVertex3f(all_vertices[i][j + 3], all_vertices[i][j + 4], all_vertices[i][j + 5]);
@@ -127,7 +125,7 @@ void renderScene(void) {
 			glEnd();
 
 			j += 9;
-			glColor3f(1.000f, 0.271f, 0.000f); // Red Orange
+			glColor3f(1.000f, 0.271f, 0.000f); // Laranja Vermelho
 			glBegin(GL_TRIANGLES);
 			glVertex3f(all_vertices[i][j], all_vertices[i][j + 1], all_vertices[i][j + 2]);
 			glVertex3f(all_vertices[i][j + 3], all_vertices[i][j + 4], all_vertices[i][j + 5]);
@@ -139,13 +137,13 @@ void renderScene(void) {
 	
 
 
-	// End of frame
+	// Fim do frame
 	glutSwapBuffers();
 }
 
 
 
-int readFile(const char* filename) { //TODO: usar ifstreams de C++
+int readFile(const char* filename) {
 	FILE* f;
 	std::cout << "readFile filename:" << filename << '\n';
 	f = fopen(filename, "r");
@@ -225,7 +223,7 @@ int readXML(char* filename)
 		c_proj[2] = atof(proj->Attribute("far"));
 
 		int j = 1, k = 1;
-		//Checks the number of .3d to load
+		// Verifica o número de .3d a carregar
 		for (XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group")->FirstChildElement("models")->FirstChildElement("model"); mod; mod = mod->NextSiblingElement()) {
 			if (j = k) {
 				k = k * 2;
@@ -236,7 +234,7 @@ int readXML(char* filename)
 		}
 
 		int i = 0;
-		//Loads all .3d files
+		// Carrega todos os ficheiros .3d
 		for (XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group")->FirstChildElement("models")->FirstChildElement("model"); mod; mod = mod->NextSiblingElement()) {
 
 			file3d = mod->Attribute("file");
@@ -263,7 +261,7 @@ int readXML(char* filename)
 }
 
 
-// write function to process keyboard events
+// escrever função para processar eventos de teclado
 void keysFunc(unsigned char key, int x, int y) {
 	switch (key) {
 	case 'd': angle += 5; break;
@@ -277,18 +275,18 @@ void keysFunc(unsigned char key, int x, int y) {
 	case 'm': mode = GL_FILL; break;
 	case 'n': mode = GL_LINE; break;
     case '+': 
-    case '=': // Allow = key (same physical key as +)
-        c_pos[2] -= 1.0f; // Zoom in - move camera closer
+    case '=': // Permitir tecla = (mesma tecla física que +)
+        c_pos[2] -= 1.0f; // Zoom in - mover câmara para mais perto
         break;
     case '-': 
-    case '_': // Allow _ key (same physical key as -)
-        c_pos[2] += 1.0f; // Zoom out - move camera further
+    case '_': // Permitir tecla _ (mesma tecla física que -)
+        c_pos[2] += 1.0f; // Zoom out - mover câmara para mais longe
         break;
     }
 	glutPostRedisplay();
 }
 
-// write function to process special keyboard events
+// escrever função para processar eventos de teclado especiais
 void specialKeysFunc(int key, int x, int y) {
 	switch (key) {
 	case GLUT_KEY_RIGHT: angle += 5; break;
@@ -299,13 +297,13 @@ void specialKeysFunc(int key, int x, int y) {
 	glutPostRedisplay();
 }
 
-// Mouse button callback function
+// Função de callback para botões do rato
 void mouseFunc(int button, int state, int x, int y) {
-    // Update current mouse position
+    // Atualizar a posição atual do rato
     mouseX = x;
     mouseY = y;
     
-    // Handle button press/release
+    // Lidar com o pressionar/libertar do botão
     if (button == GLUT_LEFT_BUTTON) {
         if (state == GLUT_DOWN) {
             mouseLeftDown = true;
@@ -332,31 +330,31 @@ void mouseFunc(int button, int state, int x, int y) {
     }
 }
 
-// Mouse motion callback function (when buttons are pressed)
+// Função de callback para movimento do rato (quando os botões estão pressionados)
 void mouseMotionFunc(int x, int y) {
-    // Calculate the difference from the previous position
+    // Calcular a diferença em relação à posição anterior
     int deltaX = x - mouseX;
     int deltaY = y - mouseY;
     
-    // Update the stored position
+    // Atualizar a posição armazenada
     mouseX = x;
     mouseY = y;
     
-    // Left button: rotation around Y and X axes
+    // Botão esquerdo: rotação em torno dos eixos Y e X
     if (mouseLeftDown) {
         angle += (float)deltaX * 0.2f;
         glutPostRedisplay();
     }
-    // Right button: zoom in/out
+    // Botão direito: zoom in/out
     else if (mouseRightDown) {
-        // Move camera position for zoom effect
+        // Mover a posição da câmara para efeito de zoom
         c_pos[2] += (float)deltaY * 0.1f;
         glutPostRedisplay();
     }
-    // Middle button: panning
+    // Botão do meio: pan
     else if (mouseMiddleDown) {
         tx += (float)deltaX * 0.05f;
-        ty -= (float)deltaY * 0.05f;  // Invert Y for intuitive panning
+        ty -= (float)deltaY * 0.05f;  // Inverter Y para pan intuitivo
         glutPostRedisplay();
     }
 }
@@ -373,32 +371,32 @@ int main(int argc, char** argv) {
 		printf("Incorrect number of arguments\n");
 		return 1;
 	}
-	// init GLUT and the window
+	// iniciar GLUT e a janela
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(w_size[0], w_size[1]);
 	glutCreateWindow("Phase 1");
 
-	// Required callback registry 
+	// Registo de callbacks necessários 
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
 	glutIdleFunc(renderScene);
 
 
-	// put here the registration of the keyboard callbacks
+	// colocar aqui o registo dos callbacks do teclado
 	glutKeyboardFunc(keysFunc);
 	glutSpecialFunc(specialKeysFunc);
 	glutMouseFunc(mouseFunc);
 	glutMotionFunc(mouseMotionFunc);
 
 
-	//  OpenGL settings
+	// configurações do OpenGL
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-	// enter GLUT's main cycle
+	// entrar no ciclo principal do GLUT
 	glutMainLoop();
 
 	return 0;
