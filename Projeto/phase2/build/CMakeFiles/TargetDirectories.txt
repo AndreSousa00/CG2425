@@ -1,0 +1,4 @@
+/Users/jnf/Documents/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase2/build/CMakeFiles/generator.dir
+/Users/jnf/Documents/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase2/build/CMakeFiles/engine.dir
+/Users/jnf/Documents/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase2/build/CMakeFiles/edit_cache.dir
+/Users/jnf/Documents/University/2024_2025/Second Semester/CG/TrabalhoPratico/Git/CG2425/Projeto/phase2/build/CMakeFiles/rebuild_cache.dir
