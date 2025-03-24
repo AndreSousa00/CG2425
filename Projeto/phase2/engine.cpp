@@ -30,7 +30,7 @@ float tz = 0;
 float mode = GL_LINE;
 
 float* init_translate;
-float** all_vertices;
+//float** all_vertices;
 float* vertices;
 int N; //vertices number 
 int num;
@@ -152,10 +152,7 @@ void renderSceneAux(Group g, Group first) {
 	glPushMatrix();
 
 	if (first) transform(first, 0);
-	 transform(g, 1);
-	 
-
-
+	transform(g, 1);
 	glBindBuffer(GL_ARRAY_BUFFER, b->buffers[0]);
 
 	glVertexPointer(3, GL_FLOAT, 0, 0);
@@ -184,10 +181,7 @@ void renderScene(void) {
 	// set the camera
 	glLoadIdentity();
 
-	gluLookAt(cos(angleBeta) * sin(angleAlpha) * radius, sin(angleBeta) * radius, cos(angleBeta) * cos(angleAlpha) * radius,
-			  c_lAt[0], c_lAt[1], c_lAt[2],
-			  c_lUp[0], c_lUp[1], c_lUp[2]);
-
+	gluLookAt(cos(angleBeta) * sin(angleAlpha) * radius, sin(angleBeta) * radius, cos(angleBeta) * cos(angleAlpha) * radius, c_lAt[0], c_lAt[1], c_lAt[2], c_lUp[0], c_lUp[1], c_lUp[2]);
 
 	for (int i = 0; i < nGroup; i++) {
 		renderSceneAux(group[i], NULL); //NULL, pois nao � subgrupo
@@ -298,16 +292,13 @@ void readXMLaux(Group g, XMLElement* elem) {
 
 	if (SC) {
 		g->scale = (float*)malloc(sizeof(float) * 3);
-
 		g->scale[0] = atof(SC->Attribute("x"));
 		g->scale[1] = atof(SC->Attribute("y"));
 		g->scale[2] = atof(SC->Attribute("z"));
-
 	}
 
 	else {
 		g->scale = NULL;
-
 	}
 
 
@@ -385,25 +376,20 @@ int readXML(char* filename)
 
 		int i = 0;
 		//Checks the number of groups
-		XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group")->FirstChildElement("group");
+		XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group");
 		for (i = 0; mod; mod = mod->NextSiblingElement()) i++;
 		if (i != 0) { // caso seja apenas 1 elemento
 			group = (Group*)malloc(sizeof(struct group) * i);
 			nGroup = i;
 
-
-
-
 			int k = 0;
-			XMLElement* elem = doc.FirstChildElement("world")->FirstChildElement("group")->FirstChildElement("group");
+			XMLElement* elem = doc.FirstChildElement("world")->FirstChildElement("group");
 
 			for (k = 0; k < nGroup; k++) {
 
 				group[k] = (Group)malloc(sizeof(struct group));
 				readXMLaux(group[k], elem);
 				elem = elem->NextSiblingElement();
-
-
 			}
 		}
 		else {
@@ -413,15 +399,11 @@ int readXML(char* filename)
 			group[0] = (Group)malloc(sizeof(struct group));
 			readXMLaux(group[0], elem);
 		}
-
-
 		//camera stuff
 		radius = sqrt(pow(c_pos[0], 2) + pow(c_pos[1], 2) + pow(c_pos[2], 2));
 		dist = sqrt(pow(c_pos[0], 2) + pow(c_pos[2], 2)); //dist is the same as radius but y coord is 0
 		angleAlpha = acos(c_pos[2] / dist);
 		angleBeta = acos(dist / radius);
-
-
 	}
 	else {
 		printf("ERROR: XML not found\n");
@@ -549,7 +531,7 @@ int main(int argc, char** argv) {
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
 	glutInitWindowSize(512, 512); //TODO: load do w size antes de ser necessario glew
-	glutCreateWindow("Grupo 17");
+	glutCreateWindow("Grupo 16");
 
 	// Required callback registry 
 	glutDisplayFunc(renderScene);

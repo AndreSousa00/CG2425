@@ -13,7 +13,8 @@ int plane_generator(float length, float division, char* filename){
     f = fopen(filename, "w+");
 
     //Variável que calcula o tamanho de cada quadrado
-    float eachSquareLength = (length + 1) / division;
+    //float eachSquareLength = (length + 1) / division;
+    float eachSquareLength = length / division;
 
     //Determinar o numero de triangulos totais necessários para formar o plano total
     int totalNumDots = 3 * 2 * pow(division, 2.0f);
