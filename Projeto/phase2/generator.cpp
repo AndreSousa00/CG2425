@@ -7,7 +7,7 @@
 #include <math.h>
 #include <iostream>
 
-int plane_generator(float length, float division, char* filename){
+void plane_generator(float length, float division, char* filename){
     //Abrir o ficheiro
     FILE* f;
     f = fopen(filename, "w+");
@@ -25,8 +25,8 @@ int plane_generator(float length, float division, char* filename){
         fprintf(f,"%d \n",totalNumDots * 3);
 
         //Centrar o plano na origem
-        float x = -(length + 1) / 2;
-		float z = -(length + 1)/ 2;
+        float x = -(length) / 2; // estava -(length + 1)
+		float z = -(length)/ 2;
 
         //Fazemos um ciclo para começarmos a construir cada coluna
         for (int column = 0; column < division; column++){
@@ -50,7 +50,7 @@ int plane_generator(float length, float division, char* filename){
             z += eachSquareLength;
 
             //Resetamos o x para voltar à sua posição inicial
-            x = -(length + 1) / 2;
+            x = -(length) / 2; // -(length + 1)
         }
         //Mandar para o terminal que o ficheiro filename.3d foi criado com sucesso
         std::cout << filename << " Created Sucessfully!\n";
@@ -58,10 +58,8 @@ int plane_generator(float length, float division, char* filename){
     else // Se o ficheiro for inválido
     {
         printf("ERROR: Creating .3d file -> Plane\n"); 
-		return 1;
     }
     fclose(f); //Fechamos o ficheiro que abrimos em cima
-    return 0;
 }
 
 void box_generator(float length, float division, char* filename) 

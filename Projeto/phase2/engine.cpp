@@ -27,7 +27,7 @@ float tx = 0;
 float ty = 0;
 float tz = 0;
 
-float mode = GL_LINE;
+float mode = GL_LINE;// Default to GL_FILL for filled polygons
 
 float* init_translate;
 //float** all_vertices;
@@ -65,13 +65,14 @@ typedef struct group {
 	float* translate;
 	float* rotate;
 	float* scale;
+	int* order;
 
 	Buffer b;
 	struct group** sub;
 	int nSub;
 }*Group;
 
-Group* group; //array with all the groups info
+Group* group; //array com todas as estruturas para desenhar as transformacoes
 int nGroup;
 
 
@@ -128,69 +129,60 @@ void Axis() {
 }
 
 void transform(Group g, int flag) {
-
-	glTranslatef(init_translate[0], init_translate[1], init_translate[2]);
-
-	//std::cout << "initTranslate: " << init_translate[0] <<", " << init_translate[1]<< ", " << init_translate[2] << '\n';
-	if (g->translate != NULL)
-		glTranslatef(g->translate[0], g->translate[1], g->translate[2]);
-
+	// Apply transformations in the correct order: rotate -> scale -> translate
 	if (g->rotate != NULL)
 		glRotatef(g->rotate[0], g->rotate[1], g->rotate[2], g->rotate[3]);
-
-
-	if (g->scale != NULL && flag ) //flag serve para escalas relativas as sub
+	if (g->scale != NULL && flag) // Apply scaling only if flag is set
 		glScalef(g->scale[0], g->scale[1], g->scale[2]);
-
-	
-
+	if (g->translate != NULL)
+		glTranslatef(g->translate[0], g->translate[1], g->translate[2]);
 }
-
 
 void renderSceneAux(Group g, Group first) {
 	Buffer b = g->b;
 	glPushMatrix();
 
-	if (first) transform(first, 0);
+	// Apply transformations for the current group
 	transform(g, 1);
-	glBindBuffer(GL_ARRAY_BUFFER, b->buffers[0]);
 
-	glVertexPointer(3, GL_FLOAT, 0, 0);
+	// Bind and draw the buffer
+	if (b != NULL) {
+		glBindBuffer(GL_ARRAY_BUFFER, b->buffers[0]);
+		glVertexPointer(3, GL_FLOAT, 0, 0);
+		glDrawArrays(GL_TRIANGLES, 0, b->verticesCount);
+	}
 
-	glDrawArrays(GL_TRIANGLES, 0, b->verticesCount);
-
-	glPopMatrix();
-
+	// Render subgroups recursively
 	if (g->sub) {
 		for (int i = 0; i < g->nSub; i++) {
 			renderSceneAux(g->sub[i], g);
-			
 		}
 	}
 
-
-
-
+	glPopMatrix();
 }
 
 void renderScene(void) {
 
 	// clear buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	// set the camera
 	glLoadIdentity();
-
 	gluLookAt(cos(angleBeta) * sin(angleAlpha) * radius, sin(angleBeta) * radius, cos(angleBeta) * cos(angleAlpha) * radius, c_lAt[0], c_lAt[1], c_lAt[2], c_lUp[0], c_lUp[1], c_lUp[2]);
 
-	for (int i = 0; i < nGroup; i++) {
-		renderSceneAux(group[i], NULL); //NULL, pois nao � subgrupo
-	}
+	// Apply global transformations from keyboard input
+	glTranslatef(tx, ty, tz);
+	glRotatef(angle, 0.0f, 1.0f, 0.0f); // Rotate around Y axis
 
-	glTranslated(tx, ty, tz);
-	glRotated(angle, 0, 1, 0);
+	// Set polygon mode
 	glPolygonMode(GL_FRONT_AND_BACK, mode);
 
+	// Render all groups
+	for (int i = 0; i < nGroup; i++) {
+		renderSceneAux(group[i], NULL);
+	}
+
+	// Draw axes
 	Axis();
 
 	// End of frame
@@ -246,19 +238,26 @@ void readXMLaux(Group g, XMLElement* elem) {
 
 	const char* file3d;
 	if (elem->FirstChildElement("models") != NULL) {
-		file3d = elem->FirstChildElement("models")->FirstChildElement("model")->Attribute("file");
-		readFile(file3d);
+		XMLElement* model = elem->FirstChildElement("models")->FirstChildElement("model");
+		while (model) {
+			const char* file3d = model->Attribute("file");
+			readFile(file3d);
+
+			float* vertexB = (float*)malloc(sizeof(float) * N);
+			memcpy(vertexB, vertices, sizeof(float) * N);
+
+			g->b = (Buffer)malloc(sizeof(buffer));
+			g->b->verticesCount = N;
+
+			glGenBuffers(1, g->b->buffers);
+			glBindBuffer(GL_ARRAY_BUFFER, g->b->buffers[0]);
+			glBufferData(GL_ARRAY_BUFFER, sizeof(float) * g->b->verticesCount, vertexB, GL_STATIC_DRAW);
+
+			model = model->NextSiblingElement("model");
+		}
+	} else {
+		g->b = NULL;
 	}
-
-	float* vertexB = (float*)malloc(sizeof(float) * N);
-	vertexB = vertices;
-	g->b = (Buffer)malloc(sizeof(buffer));
-
-	g->b->verticesCount = N;
-
-	glGenBuffers(1, g->b->buffers); //criar o VB0
-	glBindBuffer(GL_ARRAY_BUFFER, g->b->buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * g->b->verticesCount, vertexB, GL_STATIC_DRAW);
 
 
 	XMLElement* TL = elem->FirstChildElement("transform")->FirstChildElement("translate");
@@ -302,9 +301,10 @@ void readXMLaux(Group g, XMLElement* elem) {
 	}
 
 
+	int i = 0;
 	if (elem->FirstChildElement("group")) {
 
-		int i = 0;
+		//int i = 0;
 		for (XMLElement* elem2 = elem->FirstChildElement("group"); elem2; elem2 = elem2->NextSiblingElement()) i++;
 		g->sub = (Group*)malloc(sizeof(struct group) * i);
 		g->nSub = i;
@@ -320,40 +320,41 @@ void readXMLaux(Group g, XMLElement* elem) {
 	else { g->sub = NULL; g->nSub = 0; }
 }
 
-int readXML(char* filename)
+void readXML(char* filename)
 {
 	std::cout <<"readXML filename:" << filename << '\n';
 	XMLDocument doc;
 	const char* file3d;
+	int i = 0, k;
 
 	if (!(doc.LoadFile(filename)))
 	{
 		XMLElement* win = doc.FirstChildElement("world")->FirstChildElement("window");
-		//std::cout << "readXML->win\n";
+		std::cout << "readXML->win\n";
 		w_size[0] = win->FloatAttribute("width");
 		w_size[1] = win->FloatAttribute("height");
 
 
 		XMLElement* pos = doc.FirstChildElement("world")->FirstChildElement("camera")->FirstChildElement("position");
-		//std::cout << "readXML->pos\n";
+		std::cout << "readXML->pos\n";
 		c_pos[0] = atof(pos->Attribute("x"));
 		c_pos[1] = atof(pos->Attribute("y"));
 		c_pos[2] = atof(pos->Attribute("z"));
 
 		XMLElement* lAt = doc.FirstChildElement("world")->FirstChildElement("camera")->FirstChildElement("lookAt");
-		//std::cout << "readXML->lAt\n";
+		std::cout << "readXML->lAt\n";
 		c_lAt[0] = atof(lAt->Attribute("x"));
 		c_lAt[1] = atof(lAt->Attribute("y"));
 		c_lAt[2] = atof(lAt->Attribute("z"));
 
 		XMLElement* lUp = doc.FirstChildElement("world")->FirstChildElement("camera")->FirstChildElement("up");
-		//std::cout << "readXML->lUp\n";
+		std::cout << "readXML->lUp\n";
 		c_lUp[0] = atof(lUp->Attribute("x"));
 		c_lUp[1] = atof(lUp->Attribute("y"));
 		c_lUp[2] = atof(lUp->Attribute("z"));
 
 		XMLElement* proj = doc.FirstChildElement("world")->FirstChildElement("camera")->FirstChildElement("projection");
-		//std::cout << "readXML->proj\n";
+		std::cout << "readXML->linha343 proj\n";
 		c_proj[0] = atof(proj->Attribute("fov"));
 		c_proj[1] = atof(proj->Attribute("near"));
 		c_proj[2] = atof(proj->Attribute("far"));
@@ -373,32 +374,17 @@ int readXML(char* filename)
 				init_translate = NULL;
 			}
 		}
-
-		int i = 0;
 		//Checks the number of groups
-		XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group");
-		for (i = 0; mod; mod = mod->NextSiblingElement()) i++;
-		if (i != 0) { // caso seja apenas 1 elemento
-			group = (Group*)malloc(sizeof(struct group) * i);
-			nGroup = i;
-
-			int k = 0;
-			XMLElement* elem = doc.FirstChildElement("world")->FirstChildElement("group");
-
-			for (k = 0; k < nGroup; k++) {
-
-				group[k] = (Group)malloc(sizeof(struct group));
-				readXMLaux(group[k], elem);
-				elem = elem->NextSiblingElement();
+		for (XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group"); mod; mod = mod->NextSiblingElement()) i++;
+		group = (Group*)malloc(sizeof(struct group) * i);
+		nGroup = i;
+		XMLElement* elem = doc.FirstChildElement("world")->FirstChildElement("group");
+		for (k = 0; k < nGroup; k++) {
+			group[k] = (Group)malloc(sizeof(struct group));
+			readXMLaux(group[k], elem);
+			elem = elem->NextSiblingElement();
 			}
-		}
-		else {
-			group = (Group*)malloc(sizeof(struct group) * 1);
-			nGroup = 1;
-			XMLElement* elem = doc.FirstChildElement("world")->FirstChildElement("group");
-			group[0] = (Group)malloc(sizeof(struct group));
-			readXMLaux(group[0], elem);
-		}
+
 		//camera stuff
 		radius = sqrt(pow(c_pos[0], 2) + pow(c_pos[1], 2) + pow(c_pos[2], 2));
 		dist = sqrt(pow(c_pos[0], 2) + pow(c_pos[2], 2)); //dist is the same as radius but y coord is 0
@@ -407,12 +393,8 @@ int readXML(char* filename)
 	}
 	else {
 		printf("ERROR: XML not found\n");
-		return 1;
 	}
-
-	return 0;
 }
-
 
 // write function to process keyboard events
 void keys(unsigned char key, int x, int y) {
@@ -465,9 +447,9 @@ void keys(unsigned char key, int x, int y) {
 		mode = GL_POINT;
 		break;
 	default:
-		glutPostRedisplay();
 		break;
 	}
+	glutPostRedisplay(); // Add this to ensure the scene redraws after any key press
 }
 
 void sKeys(int key_code, int x, int y) {
@@ -518,60 +500,42 @@ void motion_mouse(int x, int y) {
 	glutPostRedisplay();
 }
 
-
-
-
 int main(int argc, char** argv) {
-
-	
 	printf("boot\n");
-	
 	// init GLUT and the window
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(512, 512); //TODO: load do w size antes de ser necessario glew
+	glutInitWindowSize(1024, 1024); //TODO: load do w size antes de ser necessario glew
 	glutCreateWindow("Grupo 16");
-
 	// Required callback registry 
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
 	glutIdleFunc(renderScene);
-
-
 	// put here the registration of the keyboard callbacks
 	glutKeyboardFunc(keys);
 	glutSpecialFunc(sKeys);
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion_mouse);
-
 	// init GLEW
 	#ifndef __APPLE__
 		glewInit();
 	#endif
-
 	//  OpenGL settings
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 	glEnableClientState(GL_VERTEX_ARRAY);
-
-	
-
-	if (argc == 2)
-	{
-		//std::cout << "pre-readXML\n";
-		if (readXML(argv[1]) != 0) return 1;
+	if (argc == 2){
+		std::cout << "pre-readXML\n";
+		readXML(argv[1]);
 	}
 	else {
 		printf("Incorrect number of arguments\n");
-		return 1;
+		return 0;
 	}
-
-
 	// enter GLUT's main cycle
 	glutMainLoop();
 	free(vertices);
-
-	return 0;
+	return 1;
 }
