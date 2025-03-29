@@ -107,24 +107,24 @@ void Axis() {
 	// X axis in red
 	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(100.0f, 0.0f, 0.0f);
+	glVertex3f(10000.0f, 0.0f, 0.0f);
 	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(-100.0f, 0.0f, 0.0f);
+	glVertex3f(-10000.0f, 0.0f, 0.0f);
 	// Y Axis in Green
 	glColor3f(0.0f, 1.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 100.0f, 0.0f);
+	glVertex3f(0.0f, 10000.0f, 0.0f);
 	glColor3f(0.0f, 1.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, -100.0f, 0.0f);
+	glVertex3f(0.0f, -10000.0f, 0.0f);
 	// Z Axis in Blue
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, 100.0f);
+	glVertex3f(0.0f, 0.0f, 10000.0f);
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, -100.0f);
+	glVertex3f(0.0f, 0.0f, -10000.0f);
 	glEnd();
 }
 
@@ -266,6 +266,7 @@ void readXMLaux(Group g, XMLElement* elem) {
 
 
 	if (TL) {
+		std::cout << "readXML->trans\n";
 		g->translate = (float*)malloc(sizeof(float) * 3);
 		g->translate[0] = atof(TL->Attribute("x"));
 		g->translate[1] = atof(TL->Attribute("y"));
@@ -277,6 +278,7 @@ void readXMLaux(Group g, XMLElement* elem) {
 	}
 
 	if (RT) {
+		std::cout << "readXML->rot\n";
 		g->rotate = (float*)malloc(sizeof(float) * 4);
 		g->rotate[0] = atof(RT->Attribute("angle"));
 		g->rotate[1] = atof(RT->Attribute("x"));
@@ -290,6 +292,7 @@ void readXMLaux(Group g, XMLElement* elem) {
 
 
 	if (SC) {
+		std::cout << "readXML->scale\n";
 		g->scale = (float*)malloc(sizeof(float) * 3);
 		g->scale[0] = atof(SC->Attribute("x"));
 		g->scale[1] = atof(SC->Attribute("y"));
@@ -354,7 +357,7 @@ void readXML(char* filename)
 		c_lUp[2] = atof(lUp->Attribute("z"));
 
 		XMLElement* proj = doc.FirstChildElement("world")->FirstChildElement("camera")->FirstChildElement("projection");
-		std::cout << "readXML->linha343 proj\n";
+		std::cout << "readXML->proj\n";
 		c_proj[0] = atof(proj->Attribute("fov"));
 		c_proj[1] = atof(proj->Attribute("near"));
 		c_proj[2] = atof(proj->Attribute("far"));
@@ -401,22 +404,22 @@ void keys(unsigned char key, int x, int y) {
 	switch (key)
 	{
 	case 's': //"Tras"
-		tz += 0.1;
+		tz += 100;
 		break;
 	case 'w': //"Frente"
-		tz -= 0.1;
+		tz -= 100;
 		break;
 	case 'r': //subir
-		ty += 0.1;
+		ty += 100;
 		break;
 	case 'f': //descer
-		ty -= 0.1;
+		ty -= 100;
 		break;
 	case 'd': //direita
-		tx += 0.1;
+		tx += 100;
 		break;
 	case 'a': //esquerda
-		tx -= 0.1;
+		tx -= 100;
 		break;
 	case 'q': //rodar esquerda
 		angle += 5;
@@ -425,10 +428,10 @@ void keys(unsigned char key, int x, int y) {
 		angle -= 5;
 		break;
 	case 'i':
-		radius -= 0.3f;
+		radius -= 100.0f;
 		break;
 	case 'k':
-		radius += 0.3f;
+		radius += 100.0f;
 		break;
 	case 'o':
 		radius -= 0.1f;
