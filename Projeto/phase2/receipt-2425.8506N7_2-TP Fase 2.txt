@@ -1,0 +1,8 @@
+A sua entrega foi efetuada com êxito!
+Curso: 2425.8506N7_2, [24-25] Computação Gráfica [CCOM]
+Avaliação: TP Fase 2
+
+Data de entrega: 29/03/25, 19:40
+Tamanho da entrega: 498,6 KB
+Requerente: João Nuno Rodrigues Fernandes .
+Número de confirmação: 98a63c348a8b4f168db3eae468b1fbbc
