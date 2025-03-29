@@ -7,7 +7,6 @@
 #include "tinyxml2.h"
 #include "tinyxml2.cpp"
 
-
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
@@ -19,140 +18,131 @@
 #include <math.h>
 
 using namespace tinyxml2;
-/*
-	Drawing movement
-*/
-float angle = 0;
-float tx = 0;
-float ty = 0;
-float tz = 0;
 
-float mode = GL_LINE;// Default to GL_FILL for filled polygons
+// Movimento de desenho
+float angle = 0; // Ângulo de rotação
+float tx = 0, ty = 0, tz = 0; // Translações nos eixos X, Y e Z
+float mode = GL_LINE; // Modo de desenho (GL_LINE para linhas, GL_FILL para polígonos preenchidos)
 
+// Variáveis para armazenar vértices e transformações
 float* init_translate;
-//float** all_vertices;
 float* vertices;
-int N; //vertices number 
+int N; // Número de vértices
 int num;
 
-/*
-	Window size
-	@param 0 - width
-	@param 1 - height
-*/
-int w_size[2];
-//Camera Values
-float c_pos[3];
-float c_lAt[3];
-float c_lUp[3];
-//Perspective values
-float c_proj[3];
+// Tamanho da janela
+int w_size[2]; // Índice 0: largura, Índice 1: altura
 
-float radius, dist; //dist is the same as radius but y coord is 0
-float angleAlpha, angleBeta;
-int cord_x = -1, cord_y = -1;
+// Valores da câmara
+float c_pos[3]; // Posição da câmara
+float c_lAt[3]; // Ponto para onde a câmara olha
+float c_lUp[3]; // Vetor "up" da câmara
 
-//Vertex Buffer Object -> VBO
+// Valores de perspetiva
+float c_proj[3]; // Campo de visão (fov), plano próximo (near), plano distante (far)
+
+// Variáveis para controlo da câmara
+float radius, dist; // Distância da câmara ao ponto de interesse
+float angleAlpha, angleBeta; // Ângulos para controlo da câmara
+int cord_x = -1, cord_y = -1; // Coordenadas do rato para controlo da câmara
+
+// Estrutura para armazenar buffers de vértices (VBO)
 typedef struct buffer {
-	GLuint buffers[1];
-	int verticesCount;
-	struct buffer* next;
-	int pos;
+	GLuint buffers[1]; // Identificador do buffer
+	int verticesCount; // Número de vértices
+	struct buffer* next; // Próximo buffer 
+	int pos; // Posição
 }*Buffer;
 
+// Estrutura para armazenar grupos de transformações e subgrupos
 typedef struct group {
-
-	float* translate;
-	float* rotate;
-	float* scale;
-	int* order;
-
-	Buffer b;
-	struct group** sub;
-	int nSub;
+	float* translate; // Transformação de translação
+	float* rotate; // Transformação de rotação
+	float* scale; // Transformação de escala
+	int* order; // Ordem das transformações
+	Buffer b; // Buffer associado ao grupo
+	struct group** sub; // Subgrupos
+	int nSub; // Número de subgrupos
 }*Group;
 
-Group* group; //array com todas as estruturas para desenhar as transformacoes
-int nGroup;
+Group* group; // Array de grupos principais
+int nGroup; // Número de grupos principais
 
-
-
+// Função para ajustar o tamanho da janela
 void changeSize(int w, int h) {
+	// Previne divisão por zero
+	if (h == 0) h = 1;
 
-	// Prevent a divide by zero, when window is too short
-	// (you cant make a window with zero width).
-	if (h == 0)
-		h = 1;
-
-	// compute window's aspect ratio 
+	// Calcula a proporção da janela
 	float ratio = w * 1.0 / h;
 
-	// Set the projection matrix as current
+	// Define a matriz de projeção como atual
 	glMatrixMode(GL_PROJECTION);
-	// Load Identity Matrix
 	glLoadIdentity();
 
-	// Set the viewport to be the entire window
+	// Define a viewport para a janela inteira
 	glViewport(0, 0, w, h);
 
-	// Set perspective
+	// Define a perspetiva
 	gluPerspective(c_proj[0], ratio, c_proj[1], c_proj[2]);
 
-	// return to the model view matrix mode
+	// Retorna ao modo de matriz de vista de modelo
 	glMatrixMode(GL_MODELVIEW);
 }
 
+// Função para desenhar os eixos X, Y e Z
 void Axis() {
 	glBegin(GL_LINES);
-	// X axis in red
+	// Eixo X (vermelho)
 	glColor3f(1.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(10000.0f, 0.0f, 0.0f);
-	glColor3f(1.0f, 0.0f, 0.0f);
+	glVertex3f(250000.0f, 0.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(-10000.0f, 0.0f, 0.0f);
-	// Y Axis in Green
+	glVertex3f(-250000.0f, 0.0f, 0.0f);
+	// Eixo Y (verde)
 	glColor3f(0.0f, 1.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 10000.0f, 0.0f);
-	glColor3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(0.0f, 250000.0f, 0.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, -10000.0f, 0.0f);
-	// Z Axis in Blue
+	glVertex3f(0.0f, -250000.0f, 0.0f);
+	// Eixo Z (azul)
 	glColor3f(0.0f, 0.0f, 1.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, 10000.0f);
-	glColor3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(0.0f, 0.0f, 250000.0f);
 	glVertex3f(0.0f, 0.0f, 0.0f);
-	glVertex3f(0.0f, 0.0f, -10000.0f);
+	glVertex3f(0.0f, 0.0f, -250000.0f);
 	glEnd();
 }
 
+// Função para aplicar transformações a um grupo
 void transform(Group g, int flag) {
-	// Apply transformations in the correct order: rotate -> scale -> translate
+	// Aplica rotação
 	if (g->rotate != NULL)
 		glRotatef(g->rotate[0], g->rotate[1], g->rotate[2], g->rotate[3]);
-	if (g->scale != NULL && flag) // Apply scaling only if flag is set
+	// Aplica escala (se a flag estiver ativa)
+	if (g->scale != NULL && flag)
 		glScalef(g->scale[0], g->scale[1], g->scale[2]);
+	// Aplica translação
 	if (g->translate != NULL)
 		glTranslatef(g->translate[0], g->translate[1], g->translate[2]);
 }
 
+// Função auxiliar para renderizar um grupo e os seus subgrupos
 void renderSceneAux(Group g, Group first) {
 	Buffer b = g->b;
 	glPushMatrix();
 
-	// Apply transformations for the current group
+	// Aplica transformações ao grupo atual
 	transform(g, 1);
 
-	// Bind and draw the buffer
+	// Desenha o buffer associado ao grupo
 	if (b != NULL) {
 		glBindBuffer(GL_ARRAY_BUFFER, b->buffers[0]);
 		glVertexPointer(3, GL_FLOAT, 0, 0);
 		glDrawArrays(GL_TRIANGLES, 0, b->verticesCount);
 	}
 
-	// Render subgroups recursively
+	// Renderiza subgrupos recursivamente
 	if (g->sub) {
 		for (int i = 0; i < g->nSub; i++) {
 			renderSceneAux(g->sub[i], g);
@@ -162,37 +152,35 @@ void renderSceneAux(Group g, Group first) {
 	glPopMatrix();
 }
 
+// Função principal de renderização
 void renderScene(void) {
-
-	// clear buffers
+	// Limpa os buffers
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	// set the camera
+
+	// Configura a câmara
 	glLoadIdentity();
 	gluLookAt(cos(angleBeta) * sin(angleAlpha) * radius, sin(angleBeta) * radius, cos(angleBeta) * cos(angleAlpha) * radius, c_lAt[0], c_lAt[1], c_lAt[2], c_lUp[0], c_lUp[1], c_lUp[2]);
 
-	// Apply global transformations from keyboard input
+	// Aplica transformações globais
 	glTranslatef(tx, ty, tz);
-	glRotatef(angle, 0.0f, 1.0f, 0.0f); // Rotate around Y axis
+	glRotatef(angle, 0.0f, 1.0f, 0.0f);
 
-	// Set polygon mode
+	// Define o modo de desenho
 	glPolygonMode(GL_FRONT_AND_BACK, mode);
 
-	// Render all groups
+	// Renderiza todos os grupos
 	for (int i = 0; i < nGroup; i++) {
 		renderSceneAux(group[i], NULL);
 	}
 
-	// Draw axes
+	// Desenha os eixos
 	Axis();
 
-	// End of frame
+	// Troca os buffers
 	glutSwapBuffers();
 }
 
-
-
-
-
+// Função para ler ficheiros .3d
 void readFile(const char* filename) {
 	FILE* f;
 	std::cout << "readFile filename:" << filename << '\n';
@@ -234,6 +222,7 @@ void readFile(const char* filename) {
 	
 }
 
+// Função auxiliar para ler o XML e preencher a estrutura de grupos
 void readXMLaux(Group g, XMLElement* elem) {
 
 	const char* file3d;
@@ -323,6 +312,7 @@ void readXMLaux(Group g, XMLElement* elem) {
 	else { g->sub = NULL; g->nSub = 0; }
 }
 
+// Função principal para ler o XML
 void readXML(char* filename)
 {
 	std::cout <<"readXML filename:" << filename << '\n';
@@ -377,7 +367,7 @@ void readXML(char* filename)
 				init_translate = NULL;
 			}
 		}
-		//Checks the number of groups
+		//Verifica o numero de grupos
 		for (XMLElement* mod = doc.FirstChildElement("world")->FirstChildElement("group"); mod; mod = mod->NextSiblingElement()) i++;
 		group = (Group*)malloc(sizeof(struct group) * i);
 		nGroup = i;
@@ -388,9 +378,9 @@ void readXML(char* filename)
 			elem = elem->NextSiblingElement();
 			}
 
-		//camera stuff
+		//camera 
 		radius = sqrt(pow(c_pos[0], 2) + pow(c_pos[1], 2) + pow(c_pos[2], 2));
-		dist = sqrt(pow(c_pos[0], 2) + pow(c_pos[2], 2)); //dist is the same as radius but y coord is 0
+		dist = sqrt(pow(c_pos[0], 2) + pow(c_pos[2], 2)); //dist é o mesmo que radius mas a coordenada y é 0
 		angleAlpha = acos(c_pos[2] / dist);
 		angleBeta = acos(dist / radius);
 	}
@@ -399,27 +389,27 @@ void readXML(char* filename)
 	}
 }
 
-// write function to process keyboard events
+// Função para processar eventos do teclado
 void keys(unsigned char key, int x, int y) {
 	switch (key)
 	{
 	case 's': //"Tras"
-		tz += 100;
+		tz += 250;
 		break;
 	case 'w': //"Frente"
-		tz -= 100;
+		tz -= 250;
 		break;
 	case 'r': //subir
-		ty += 100;
+		ty += 250;
 		break;
 	case 'f': //descer
-		ty -= 100;
+		ty -= 250;
 		break;
 	case 'd': //direita
-		tx += 100;
+		tx += 250;
 		break;
 	case 'a': //esquerda
-		tx -= 100;
+		tx -= 250;
 		break;
 	case 'q': //rodar esquerda
 		angle += 5;
@@ -428,10 +418,10 @@ void keys(unsigned char key, int x, int y) {
 		angle -= 5;
 		break;
 	case 'i':
-		radius -= 100.0f;
+		radius -= 10.0f;
 		break;
 	case 'k':
-		radius += 100.0f;
+		radius += 10.0f;
 		break;
 	case 'o':
 		radius -= 0.1f;
@@ -452,9 +442,10 @@ void keys(unsigned char key, int x, int y) {
 	default:
 		break;
 	}
-	glutPostRedisplay(); // Add this to ensure the scene redraws after any key press
+	glutPostRedisplay(); // Adiciona isto para garantir que a cena é redesenhada após qualquer tecla ser pressionada
 }
 
+// Função para processar eventos do teclado especial
 void sKeys(int key_code, int x, int y) {
 	switch (key_code) {
 	case GLUT_KEY_LEFT:
@@ -476,6 +467,7 @@ void sKeys(int key_code, int x, int y) {
 	glutPostRedisplay();
 }
 
+// Função para processar eventos do rato
 void mouse(int button, int state, int x, int y) {
 	if (button == GLUT_LEFT_BUTTON) {
 		if (state == GLUT_DOWN) {
@@ -489,6 +481,7 @@ void mouse(int button, int state, int x, int y) {
 	}
 }
 
+// Função para processar movimento do rato
 void motion_mouse(int x, int y) {
 	if (cord_x >= 0) {
 		angleAlpha = (x + cord_x) * 0.01f;
@@ -503,28 +496,29 @@ void motion_mouse(int x, int y) {
 	glutPostRedisplay();
 }
 
+// Função principal
 int main(int argc, char** argv) {
 	printf("boot\n");
-	// init GLUT and the window
+	// Inicializa GLUT e a janela
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(100, 100);
-	glutInitWindowSize(1024, 1024); //TODO: load do w size antes de ser necessario glew
+	glutInitWindowSize(1024, 1024);
 	glutCreateWindow("Grupo 16");
-	// Required callback registry 
+	// Registo de callbacks necessários
 	glutDisplayFunc(renderScene);
 	glutReshapeFunc(changeSize);
 	glutIdleFunc(renderScene);
-	// put here the registration of the keyboard callbacks
+	// Registo de callbacks do teclado
 	glutKeyboardFunc(keys);
 	glutSpecialFunc(sKeys);
 	glutMouseFunc(mouse);
 	glutMotionFunc(motion_mouse);
-	// init GLEW
+	// Inicializa GLEW
 	#ifndef __APPLE__
 		glewInit();
 	#endif
-	//  OpenGL settings
+	// Configurações do OpenGL
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
@@ -537,7 +531,7 @@ int main(int argc, char** argv) {
 		printf("Incorrect number of arguments\n");
 		return 0;
 	}
-	// enter GLUT's main cycle
+	// Entra no ciclo principal do GLUT
 	glutMainLoop();
 	free(vertices);
 	return 1;
