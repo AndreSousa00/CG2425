@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<world>
+    <window width="800" height="600" />
+    <camera>
+        <position x="100" y="50" z="100" />
+        <lookAt x="0" y="0" z="0" />
+        <up x="0" y="1" z="0" />
+        <projection fov="60" near="1" far="1000" />
+    </camera>
+    
+    <!-- Grupo principal - Sistema Solar -->
+    <group>
+        <!-- Sol no centro -->
+        <group>
+            <transform>
+                <!-- Rotação lenta do Sol em torno de si mesmo -->
+                <rotate time="30" x="0" y="1" z="0" />
+                <scale x="4" y="4" z="4" />
+            </transform>
+            <models>
+                <model file="solarSystem/Sun.3d" />
+            </models>
+        </group>
+        
+        <!-- Mercúrio -->
+        <group>
+            <transform>
+                <!-- Órbita ao redor do Sol -->
+                <rotate time="4" x="0" y="1" z="0" />
+                <!-- Posição relativa ao Sol -->
+                <translate x="7.5" y="0" z="0" />
+                <!-- Rotação do planeta em torno de si mesmo -->
+                <rotate time="2" x="0" y="1" z="0" />
+                <!-- Tamanho de Mercúrio -->
+                <scale x="0.5" y="0.5" z="0.5" />
+            </transform>
+            <models>
+                <model file="solarSystem/Mercury.3d" />
+            </models>
+        </group>
+        
+        <!-- Vênus -->
+        <group>
+            <transform>
+                <rotate time="7" x="0" y="1" z="0" />
+                <translate x="8.0" y="0" z="0" />
+                <rotate time="3" x="0" y="1" z="0" />
+                <scale x="0.8" y="0.8" z="0.8" />
+            </transform>
+            <models>
+                <model file="solarSystem/Venus.3d" />
+            </models>
+        </group>
+        
+        <!-- Terra -->
+        <group>
+            <transform>
+                <rotate time="10" x="0" y="1" z="0" />
+                <translate x="8.5" y="0" z="0" />
+                <rotate time="1" x="0" y="1" z="0" />
+                <scale x="0.9" y="0.9" z="0.9" />
+            </transform>
+            <models>
+                <model file="solarSystem/Earth.3d" />
+            </models>
+            
+            <!-- Lua -->
+            <group>
+                <transform>
+                    <rotate time="3" x="0" y="1" z="0" />
+                    <translate x="1.5" y="0" z="0" />
+                    <scale x="0.3" y="0.3" z="0.3" />
+                </transform>
+                <models>
+                    <model file="solarSystem/Moon.3d" />
+                </models>
+            </group>
+        </group>
+        
+        <!-- Marte -->
+        <group>
+            <transform>
+                <rotate time="15" x="0" y="1" z="0" />
+                <translate x="9.2" y="0" z="0" />
+                <rotate time="1" x="0" y="1" z="0" />
+                <scale x="0.7" y="0.7" z="0.7" />
+            </transform>
+            <models>
+                <model file="solarSystem/Mars.3d" />
+            </models>
+        </group>
+        
+        <!-- Júpiter -->
+        <group>
+            <transform>
+                <rotate time="25" x="0" y="1" z="0" />
+                <translate x="14.7" y="0" z="0" />
+                <rotate time="0.5" x="0" y="1" z="0" />
+                <scale x="3" y="3" z="3" />
+            </transform>
+            <models>
+                <model file="solarSystem/Jupiter.3d" />
+            </models>
+        </group>
+        
+        <!-- Saturno -->
+        <group>
+            <transform>
+                <rotate time="35" x="0" y="1" z="0" />
+                <translate x="21.2" y="0" z="0" />
+                <rotate time="0.6" x="0" y="1" z="0" />
+                <scale x="2.5" y="2.5" z="2.5" />
+            </transform>
+            <models>
+                <model file="solarSystem/Saturn.3d" />
+            </models>
+            
+            <!-- Anéis de Saturno -->
+            <group>
+                <transform>
+                    <rotate angle="60" x="1" y="0" z="0" />
+                    <rotate angle="40" x="0" y="0" z="1" />
+                    <!-- Change z="0.1" to z="4" for uniform scaling -->
+                    <scale x="4" y="4" z="4" /> 
+                </transform>
+                <models>
+                    <model file="solarSystem/torus.3d" />
+                </models>
+            </group>
+        </group>
+        
+        
+        <!-- Urano -->
+        <group>
+            <transform>
+                <rotate time="45" x="0" y="1" z="0" />
+                <translate x="35.7" y="0" z="0" />
+                <rotate time="0.8" x="0" y="1" z="0" />
+                <scale x="1.8" y="1.8" z="1.8" />
+            </transform>
+            <models>
+                <model file="solarSystem/Uranus.3d" />
+            </models>
+        </group>
+        
+        <!-- Netuno -->
+        <group>
+            <transform>
+                <rotate time="55" x="0" y="1" z="0" />
+                <translate x="52.0" y="0" z="0" />
+                <rotate time="0.9" x="0" y="1" z="0" />
+                <scale x="1.7" y="1.7" z="1.7" />
+            </transform>
+            <models>
+                <model file="solarSystem/Neptune.3d" />
+            </models>
+        </group>
+        
+        <!-- Cometa usando curva Catmull-Rom -->
+        <group>
+            <transform>
+                <translate time="30" align="true">
+                    <point x="60" y="20" z="60" />
+                    <point x="40" y="10" z="-20" />
+                    <point x="-10" y="-5" z="-40" />
+                    <point x="-50" y="5" z="10" />
+                    <point x="-30" y="15" z="50" />
+                    <point x="20" y="25" z="70" />
+                </translate>
+                <scale x="0.6" y="0.6" z="2.0" />
+            </transform>
+            <models>
+                <!-- Este modelo deveria idealmente ser criado com patches de Bezier -->
+                <model file="cone.3d" />
+            </models>
+        </group>
+    </group>
+</world>
