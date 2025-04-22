@@ -28,7 +28,7 @@
                 <!-- Órbita ao redor do Sol -->
                 <rotate time="4" x="0" y="1" z="0" />
                 <!-- Posição relativa ao Sol -->
-                <translate x="7.5" y="0" z="0" />
+                <translate x="15" y="0" z="0" />
                 <!-- Rotação do planeta em torno de si mesmo -->
                 <rotate time="2" x="0" y="1" z="0" />
                 <!-- Tamanho de Mercúrio -->
@@ -39,11 +39,11 @@
             </models>
         </group>
         
-        <!-- Vênus -->
+        <!-- Venus -->
         <group>
             <transform>
                 <rotate time="7" x="0" y="1" z="0" />
-                <translate x="8.0" y="0" z="0" />
+                <translate x="25" y="0" z="0" />
                 <rotate time="3" x="0" y="1" z="0" />
                 <scale x="0.8" y="0.8" z="0.8" />
             </transform>
@@ -56,7 +56,7 @@
         <group>
             <transform>
                 <rotate time="10" x="0" y="1" z="0" />
-                <translate x="8.5" y="0" z="0" />
+                <translate x="40" y="0" z="0" />
                 <rotate time="1" x="0" y="1" z="0" />
                 <scale x="0.9" y="0.9" z="0.9" />
             </transform>
@@ -81,7 +81,7 @@
         <group>
             <transform>
                 <rotate time="15" x="0" y="1" z="0" />
-                <translate x="9.2" y="0" z="0" />
+                <translate x="60" y="0" z="0" />
                 <rotate time="1" x="0" y="1" z="0" />
                 <scale x="0.7" y="0.7" z="0.7" />
             </transform>
@@ -94,7 +94,7 @@
         <group>
             <transform>
                 <rotate time="25" x="0" y="1" z="0" />
-                <translate x="14.7" y="0" z="0" />
+                <translate x="100" y="0" z="0" />
                 <rotate time="0.5" x="0" y="1" z="0" />
                 <scale x="3" y="3" z="3" />
             </transform>
@@ -107,7 +107,7 @@
         <group>
             <transform>
                 <rotate time="35" x="0" y="1" z="0" />
-                <translate x="21.2" y="0" z="0" />
+                <translate x="150" y="0" z="0" />
                 <rotate time="0.6" x="0" y="1" z="0" />
                 <scale x="2.5" y="2.5" z="2.5" />
             </transform>
@@ -134,7 +134,7 @@
         <group>
             <transform>
                 <rotate time="45" x="0" y="1" z="0" />
-                <translate x="35.7" y="0" z="0" />
+                <translate x="200" y="0" z="0" />
                 <rotate time="0.8" x="0" y="1" z="0" />
                 <scale x="1.8" y="1.8" z="1.8" />
             </transform>
@@ -147,7 +147,7 @@
         <group>
             <transform>
                 <rotate time="55" x="0" y="1" z="0" />
-                <translate x="52.0" y="0" z="0" />
+                <translate x="250" y="0" z="0" />
                 <rotate time="0.9" x="0" y="1" z="0" />
                 <scale x="1.7" y="1.7" z="1.7" />
             </transform>

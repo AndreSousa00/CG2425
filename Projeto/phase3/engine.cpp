@@ -237,6 +237,8 @@ void Axis() {
 
 // Função para aplicar transformações a um grupo
 void transform(Group g, int flag) {
+    if (!g) return;
+    
     // Obtém o tempo atual em milissegundos
     int currentTime = glutGet(GLUT_ELAPSED_TIME);
     
@@ -255,7 +257,14 @@ void transform(Group g, int flag) {
     
     // 3. Rotação baseada em tempo (rotação em torno de si próprio)
     if (g->rotate_time != NULL) {
-        float angle_time = fmod(currentTime / 1000.0f, g->rotate_time->time) / g->rotate_time->time * 360.0f;
+        // Reduzindo a velocidade de rotação aplicando um fator de desaceleração
+        // Multiplique o tempo atual por um fator menor para rotação mais lenta
+        float timeSlowFactor = 0.1f; // Ajuste este valor para controlar a velocidade (menor = mais lento)
+        float adjustedTime = (currentTime / 1000.0f) * timeSlowFactor;
+        
+        // Calcular o ângulo com base no tempo ajustado
+        float angle_time = fmod(adjustedTime, g->rotate_time->time) / g->rotate_time->time * 360.0f;
+        
         glRotatef(angle_time, g->rotate_time->x, g->rotate_time->y, g->rotate_time->z);
     }
     
@@ -266,8 +275,12 @@ void transform(Group g, int flag) {
     
     // 5. Translação baseada em curva (se existir)
     if (g->translate_curve != NULL && g->translate_curve->points.size() >= 4) {
+        // Também desaceleramos o movimento em curva
+        float timeSlowFactor = 0.1f; // Use o mesmo fator da rotação para consistência
+        float adjustedTime = (currentTime / 1000.0f) * timeSlowFactor;
+        
         float pos[3], deriv[3];
-        float gt = fmod(currentTime / 1000.0f, g->translate_curve->time) / g->translate_curve->time;
+        float gt = fmod(adjustedTime, g->translate_curve->time) / g->translate_curve->time;
         
         getGlobalCatmullRomPoint(gt, g->translate_curve->points, pos, deriv);
         
@@ -326,30 +339,33 @@ void transform(Group g, int flag) {
 void renderSceneAux(Group g, Group first) {
     if (g == nullptr) return;
     
-    Buffer b = g->b;
-    glPushMatrix();
+    glPushMatrix();  // Salva o estado atual da matriz
 
     // Aplica transformações ao grupo atual
     transform(g, 1);
 
     // Desenha o buffer associado ao grupo
-    if (b != NULL) {
+    Buffer b = g->b;
+    if (b != nullptr) {
         glBindBuffer(GL_ARRAY_BUFFER, b->buffers[0]);
         glVertexPointer(3, GL_FLOAT, 0, 0);
         glDrawArrays(GL_TRIANGLES, 0, b->verticesCount);
     }
 
     // Renderiza subgrupos recursivamente
-    if (g->sub) {
+    if (g->sub && g->nSub > 0) {
+        std::cout << "Rendering " << g->nSub << " subgroups" << std::endl;
         for (int i = 0; i < g->nSub; i++) {
             if (g->sub[i] != nullptr) {
+                std::cout << "Rendering subgroup " << i << std::endl;
                 renderSceneAux(g->sub[i], g);
             }
         }
     }
 
-    glPopMatrix();
+    glPopMatrix();  // Restaura o estado da matriz antes das transformações
 }
+
 
 // Função principal de renderização
 void renderScene(void) {
@@ -499,84 +515,94 @@ void readFile(const char* filename) {
 
 // Função auxiliar para ler o XML e preencher a estrutura de grupos
 void readXMLaux(Group g, XMLElement* elem) {
-    if (!g || !elem) return;
+    if (!g || !elem) {
+        std::cerr << "ERROR: Invalid group or element in readXMLaux" << std::endl;
+        return;
+    }
     
-    // Inicializa variáveis de transformação como nulas
-    g->translate = NULL;
-    g->translate_curve = NULL;
-    g->rotate = NULL;
-    g->rotate_time = NULL;
-    g->scale = NULL;
-    g->b = NULL;
-    g->sub = NULL;
+    // Inicialização explícita de todos os campos
+    g->translate = nullptr;
+    g->translate_curve = nullptr;
+    g->rotate = nullptr;
+    g->rotate_time = nullptr;
+    g->scale = nullptr;
+    g->order = nullptr;
+    g->b = nullptr;
+    g->sub = nullptr;
     g->nSub = 0;
     
-    if (elem->FirstChildElement("models") != NULL) {
-        XMLElement* model = elem->FirstChildElement("models")->FirstChildElement("model");
-        while (model) {
-            const char* file3d = model->Attribute("file");
+    // Processar os models (arquivos 3D)
+    XMLElement* modelsElem = elem->FirstChildElement("models");
+    if (modelsElem) {
+        XMLElement* modelElem = modelsElem->FirstChildElement("model");
+        while (modelElem) {
+            const char* file3d = modelElem->Attribute("file");
             if (file3d) {
+                std::cout << "Loading model: " << file3d << std::endl;
                 readFile(file3d);
-
-                if (vertices != NULL) {
+                
+                if (vertices != nullptr && N > 0) {
                     float* vertexB = (float*)malloc(sizeof(float) * N);
                     if (!vertexB) {
-                        printf("ERROR: Memory allocation failed for vertex buffer\n");
+                        std::cerr << "ERROR: Memory allocation failed for vertex buffer" << std::endl;
                     } else {
                         memcpy(vertexB, vertices, sizeof(float) * N);
-
-                        g->b = (Buffer)malloc(sizeof(struct buffer));
-                        if (!g->b) {
-                            printf("ERROR: Memory allocation failed for buffer\n");
+                        
+                        Buffer buffer = (Buffer)malloc(sizeof(struct buffer));
+                        if (!buffer) {
+                            std::cerr << "ERROR: Memory allocation failed for buffer" << std::endl;
                             free(vertexB);
                         } else {
-                            g->b->verticesCount = N;
-                            g->b->next = NULL;
-
-                            glGenBuffers(1, g->b->buffers);
-                            glBindBuffer(GL_ARRAY_BUFFER, g->b->buffers[0]);
-                            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * g->b->verticesCount, vertexB, GL_STATIC_DRAW);
+                            buffer->verticesCount = N;
+                            buffer->next = nullptr;
+                            buffer->pos = 0;
+                            
+                            glGenBuffers(1, buffer->buffers);
+                            glBindBuffer(GL_ARRAY_BUFFER, buffer->buffers[0]);
+                            glBufferData(GL_ARRAY_BUFFER, sizeof(float) * N, vertexB, GL_STATIC_DRAW);
+                            
+                            // Assign buffer to group
+                            g->b = buffer;
                             
                             free(vertexB);
+                            std::cout << "Buffer created for model: " << file3d << " with " << N << " vertices" << std::endl;
                         }
                     }
                     
                     free(vertices);
-                    vertices = NULL;
+                    vertices = nullptr;
                 }
             } else {
-                printf("WARNING: Model without 'file' attribute\n");
+                std::cerr << "WARNING: Model without 'file' attribute" << std::endl;
             }
-
-            model = model->NextSiblingElement("model");
+            
+            modelElem = modelElem->NextSiblingElement("model");
         }
     }
-
-    // Verifica se existe o elemento transform
+    
+    // Processar transformações
     XMLElement* transformElem = elem->FirstChildElement("transform");
     if (transformElem) {
-        // Processa elemento translate
+        // Processar translação
         XMLElement* translateElem = transformElem->FirstChildElement("translate");
-        if (translateElem) {
-            // Verifica se é uma translação estática ou baseada em curva
+        while (translateElem) {
             if (translateElem->Attribute("time")) {
                 // Translação baseada em curva Catmull-Rom
                 float time = translateElem->FloatAttribute("time");
                 bool align = false;
                 if (translateElem->Attribute("align")) {
-                    align = strcmp(translateElem->Attribute("align"), "True") == 0 || 
-                           strcmp(translateElem->Attribute("align"), "true") == 0;
+                    const char* alignAttr = translateElem->Attribute("align");
+                    align = (strcmp(alignAttr, "true") == 0 || strcmp(alignAttr, "True") == 0);
                 }
                 
-                // Inicializa a estrutura de translação por curva
                 g->translate_curve = new TranslateCurve();
                 if (!g->translate_curve) {
-                    printf("ERROR: Memory allocation failed for translate_curve\n");
+                    std::cerr << "ERROR: Memory allocation failed for translate_curve" << std::endl;
                 } else {
                     g->translate_curve->time = time;
                     g->translate_curve->align = align;
                     
-                    // Lê os pontos da curva
+                    // Ler os pontos
                     XMLElement* pointElem = translateElem->FirstChildElement("point");
                     while (pointElem) {
                         Point3D point;
@@ -588,93 +614,116 @@ void readXMLaux(Group g, XMLElement* elem) {
                         pointElem = pointElem->NextSiblingElement("point");
                     }
                     
-                    // Verificar se há no mínimo 4 pontos (requisito para Catmull-Rom)
                     if (g->translate_curve->points.size() < 4) {
                         std::cerr << "ERROR: Catmull-Rom curve requires at least 4 points!" << std::endl;
                         delete g->translate_curve;
-                        g->translate_curve = NULL;
+                        g->translate_curve = nullptr;
+                    } else {
+                        std::cout << "Created Catmull-Rom curve with " << g->translate_curve->points.size() << " points" << std::endl;
                     }
                 }
             } else {
                 // Translação estática
                 g->translate = (float*)malloc(sizeof(float) * 3);
                 if (!g->translate) {
-                    printf("ERROR: Memory allocation failed for translate\n");
+                    std::cerr << "ERROR: Memory allocation failed for translate" << std::endl;
                 } else {
                     g->translate[0] = translateElem->FloatAttribute("x");
                     g->translate[1] = translateElem->FloatAttribute("y");
                     g->translate[2] = translateElem->FloatAttribute("z");
+                    std::cout << "Static translation: [" << g->translate[0] << ", " << g->translate[1] << ", " << g->translate[2] << "]" << std::endl;
                 }
             }
+            
+            translateElem = translateElem->NextSiblingElement("translate");
         }
-
-        // Processa elemento rotate
+        
+        // Processar rotação
         XMLElement* rotateElem = transformElem->FirstChildElement("rotate");
-        if (rotateElem) {
-            // Verifica se é uma rotação estática ou baseada em tempo
+        while (rotateElem) {
             if (rotateElem->Attribute("time")) {
                 // Rotação baseada em tempo
                 g->rotate_time = new RotateTime();
                 if (!g->rotate_time) {
-                    printf("ERROR: Memory allocation failed for rotate_time\n");
+                    std::cerr << "ERROR: Memory allocation failed for rotate_time" << std::endl;
                 } else {
                     g->rotate_time->time = rotateElem->FloatAttribute("time");
                     g->rotate_time->x = rotateElem->FloatAttribute("x");
                     g->rotate_time->y = rotateElem->FloatAttribute("y");
                     g->rotate_time->z = rotateElem->FloatAttribute("z");
+                    std::cout << "Time-based rotation: time=" << g->rotate_time->time << ", axis=[" 
+                              << g->rotate_time->x << ", " << g->rotate_time->y << ", " << g->rotate_time->z << "]" << std::endl;
                 }
             } else {
                 // Rotação estática
                 g->rotate = (float*)malloc(sizeof(float) * 4);
                 if (!g->rotate) {
-                    printf("ERROR: Memory allocation failed for rotate\n");
+                    std::cerr << "ERROR: Memory allocation failed for rotate" << std::endl;
                 } else {
                     g->rotate[0] = rotateElem->FloatAttribute("angle");
                     g->rotate[1] = rotateElem->FloatAttribute("x");
                     g->rotate[2] = rotateElem->FloatAttribute("y");
                     g->rotate[3] = rotateElem->FloatAttribute("z");
+                    std::cout << "Static rotation: angle=" << g->rotate[0] << ", axis=[" 
+                              << g->rotate[1] << ", " << g->rotate[2] << ", " << g->rotate[3] << "]" << std::endl;
                 }
             }
+            
+            rotateElem = rotateElem->NextSiblingElement("rotate");
         }
-
-        // Processa elemento scale
+        
+        // Processar escala
         XMLElement* scaleElem = transformElem->FirstChildElement("scale");
         if (scaleElem) {
             g->scale = (float*)malloc(sizeof(float) * 3);
             if (!g->scale) {
-                printf("ERROR: Memory allocation failed for scale\n");
+                std::cerr << "ERROR: Memory allocation failed for scale" << std::endl;
             } else {
                 g->scale[0] = scaleElem->FloatAttribute("x");
                 g->scale[1] = scaleElem->FloatAttribute("y");
                 g->scale[2] = scaleElem->FloatAttribute("z");
+                std::cout << "Scale: [" << g->scale[0] << ", " << g->scale[1] << ", " << g->scale[2] << "]" << std::endl;
             }
         }
     }
-
-    // Processa grupos filhos recursivamente
-    int i = 0;
-    if (elem->FirstChildElement("group")) {
-        // Conta o número de grupos filhos
-        for (XMLElement* elem2 = elem->FirstChildElement("group"); elem2; elem2 = elem2->NextSiblingElement("group")) 
-            i++;
+    
+    // Processar subgrupos - primeiro contar quantos existem
+    int subgroupCount = 0;
+    for (XMLElement* subgroupElem = elem->FirstChildElement("group"); 
+         subgroupElem != nullptr; 
+         subgroupElem = subgroupElem->NextSiblingElement("group")) {
+        subgroupCount++;
+    }
+    
+    // Se há subgrupos, alocar memória e processá-los
+    if (subgroupCount > 0) {
+        std::cout << "Found " << subgroupCount << " subgroups" << std::endl;
         
-        if (i > 0) {
-            g->sub = (Group*)malloc(sizeof(Group) * i);
-            if (!g->sub) {
-                printf("ERROR: Memory allocation failed for subgroups\n");
-            } else {
-                g->nSub = i;
-
-                XMLElement* elem3 = elem->FirstChildElement("group");
-                for (int k = 0; k < g->nSub; k++) {
-                    g->sub[k] = (Group)malloc(sizeof(struct group));
-                    if (!g->sub[k]) {
-                        printf("ERROR: Memory allocation failed for subgroup %d\n", k);
-                    } else {
-                        readXMLaux(g->sub[k], elem3);
-                    }
-                    elem3 = elem3->NextSiblingElement("group");
+        g->sub = (Group*)malloc(sizeof(Group) * subgroupCount);
+        if (!g->sub) {
+            std::cerr << "ERROR: Memory allocation failed for subgroups array" << std::endl;
+        } else {
+            g->nSub = subgroupCount;
+            
+            int index = 0;
+            XMLElement* subgroupElem = elem->FirstChildElement("group");
+            
+            while (subgroupElem && index < subgroupCount) {
+                g->sub[index] = (Group)malloc(sizeof(struct group));
+                if (!g->sub[index]) {
+                    std::cerr << "ERROR: Memory allocation failed for subgroup " << index << std::endl;
+                } else {
+                    std::cout << "Processing subgroup " << index << std::endl;
+                    // Chamada recursiva para processar o subgrupo
+                    readXMLaux(g->sub[index], subgroupElem);
                 }
+                
+                subgroupElem = subgroupElem->NextSiblingElement("group");
+                index++;
+            }
+            
+            if (index != subgroupCount) {
+                std::cerr << "WARNING: Expected " << subgroupCount << " subgroups but processed " << index << std::endl;
             }
         }
     }
@@ -683,169 +732,149 @@ void readXMLaux(Group g, XMLElement* elem) {
 // Função principal para ler o XML
 void readXML(char* filename) {
     if (!filename) {
-        printf("ERROR: Invalid XML filename (null)\n");
+        std::cerr << "ERROR: Invalid XML filename (null)" << std::endl;
         return;
     }
     
-    std::cout << "readXML filename:" << filename << '\n';
-    XMLDocument doc;
-    int i = 0, k;
-
-    // Verifica se o arquivo XML carregou corretamente
-    XMLError err = doc.LoadFile(filename);
-    if (err == XML_SUCCESS) {
-        XMLElement* worldElem = doc.FirstChildElement("world");
-        if (!worldElem) {
-            printf("ERROR: Invalid XML format - missing 'world' element\n");
-            return;
-        }
-        
-        XMLElement* win = worldElem->FirstChildElement("window");
-        if (win) {
-            std::cout << "readXML->win\n";
-            w_size[0] = win->FloatAttribute("width");
-            w_size[1] = win->FloatAttribute("height");
-            
-            if (w_size[0] <= 0 || w_size[1] <= 0) {
-                printf("WARNING: Invalid window dimensions. Using default size 800x600\n");
-                w_size[0] = 800;
-                w_size[1] = 600;
-            }
-        } else {
-            w_size[0] = 800;
-            w_size[1] = 600;
-            std::cout << "WARNING: No window element found. Using default size 800x600\n";
-        }
-
-        XMLElement* cameraElem = worldElem->FirstChildElement("camera");
-        if (cameraElem) {
-            XMLElement* pos = cameraElem->FirstChildElement("position");
-            if (pos) {
-                std::cout << "readXML->pos\n";
-                c_pos[0] = pos->FloatAttribute("x");
-                c_pos[1] = pos->FloatAttribute("y");
-                c_pos[2] = pos->FloatAttribute("z");
-            } else {
-                c_pos[0] = 0; c_pos[1] = 0; c_pos[2] = 5;
-                std::cout << "WARNING: No camera position found. Using default\n";
-            }
-
-            XMLElement* lAt = cameraElem->FirstChildElement("lookAt");
-            if (lAt) {
-                std::cout << "readXML->lAt\n";
-                c_lAt[0] = lAt->FloatAttribute("x");
-                c_lAt[1] = lAt->FloatAttribute("y");
-                c_lAt[2] = lAt->FloatAttribute("z");
-            } else {
-                c_lAt[0] = 0; c_lAt[1] = 0; c_lAt[2] = 0;
-                std::cout << "WARNING: No lookAt element found. Using default\n";
-            }
-
-            XMLElement* lUp = cameraElem->FirstChildElement("up");
-            if (lUp) {
-                std::cout << "readXML->lUp\n";
-                c_lUp[0] = lUp->FloatAttribute("x");
-                c_lUp[1] = lUp->FloatAttribute("y");
-                c_lUp[2] = lUp->FloatAttribute("z");
-            } else {
-                c_lUp[0] = 0; c_lUp[1] = 1; c_lUp[2] = 0;
-                std::cout << "WARNING: No up element found. Using default\n";
-            }
-
-            XMLElement* proj = cameraElem->FirstChildElement("projection");
-            if (proj) {
-                std::cout << "readXML->proj\n";
-                c_proj[0] = proj->FloatAttribute("fov");
-                c_proj[1] = proj->FloatAttribute("near");
-                c_proj[2] = proj->FloatAttribute("far");
-                
-                // Validar valores da projeção
-                if (c_proj[0] <= 0 || c_proj[0] > 180) {
-                    printf("WARNING: Invalid FOV value. Using default 60\n");
-                    c_proj[0] = 60;
-                }
-                if (c_proj[1] <= 0) {
-                    printf("WARNING: Invalid near plane value. Using default 1\n");
-                    c_proj[1] = 1;
-                }
-                if (c_proj[2] <= c_proj[1]) {
-                    printf("WARNING: Far plane must be greater than near plane. Using default 1000\n");
-                    c_proj[2] = 1000;
-                }
-            } else {
-                c_proj[0] = 60; c_proj[1] = 1; c_proj[2] = 1000;
-                std::cout << "WARNING: No projection element found. Using default\n";
-            }
-        } else {
-            // Valores padrão da câmera
-            c_pos[0] = 0; c_pos[1] = 0; c_pos[2] = 5;
-            c_lAt[0] = 0; c_lAt[1] = 0; c_lAt[2] = 0;
-            c_lUp[0] = 0; c_lUp[1] = 1; c_lUp[2] = 0;
-            c_proj[0] = 60; c_proj[1] = 1; c_proj[2] = 1000;
-            std::cout << "WARNING: No camera element found. Using default camera settings\n";
-        }
-
-        // Inicializa o tempo
-        lastTime = glutGet(GLUT_ELAPSED_TIME);
-
-        // Verifica o número de grupos no nível principal
-        for (XMLElement* grp = worldElem->FirstChildElement("group"); grp; grp = grp->NextSiblingElement("group")) i++;
-        
-        if (i == 0) {
-            printf("ERROR: No groups found in XML\n");
-            return;
-        }
-        
-        // Libera grupos anteriores, se existirem
-        if (group != nullptr) {
-            for (int j = 0; j < nGroup; j++) {
-                if (group[j] != nullptr) {
-                    // Uma função separada deveria ser usada aqui para limpeza
-                    // mas vamos simplificar para este exemplo
-                    free(group[j]);
-                }
-            }
-            free(group);
-        }
-        
-        group = (Group*)malloc(sizeof(Group) * i);
-        if (!group) {
-            printf("ERROR: Memory allocation failed for group array\n");
-            return;
-        }
-        
-        nGroup = i;
-        
-        XMLElement* elem = worldElem->FirstChildElement("group");
-        for (k = 0; k < nGroup; k++) {
-            group[k] = (Group)malloc(sizeof(struct group));
-            if (!group[k]) {
-                printf("ERROR: Memory allocation failed for group %d\n", k);
-            } else {
-                readXMLaux(group[k], elem);
-            }
-            elem = elem->NextSiblingElement("group");
-        }
-
-        // Configuração da câmera
-        radius = sqrt(pow(c_pos[0], 2) + pow(c_pos[1], 2) + pow(c_pos[2], 2));
-        dist = sqrt(pow(c_pos[0], 2) + pow(c_pos[2], 2)); // dist é o mesmo que radius mas a coordenada y é 0
-        if (dist > EPSILON) {
-            angleAlpha = acos(c_pos[2] / dist);
-            if (c_pos[0] < 0) angleAlpha = -angleAlpha;
-        } else {
-            angleAlpha = 0;
-        }
-        
-        if (radius > EPSILON) {
-            angleBeta = asin(c_pos[1] / radius);
-        } else {
-            angleBeta = 0;
-        }
+    std::cout << "Reading XML file: " << filename << std::endl;
+    
+    tinyxml2::XMLDocument doc;
+    tinyxml2::XMLError err = doc.LoadFile(filename);
+    
+    if (err != tinyxml2::XML_SUCCESS) {
+        std::cerr << "ERROR: Failed to load XML file: " << filename << std::endl;
+        std::cerr << "Error code: " << err << std::endl;
+        return;
     }
-    else {
-        printf("ERROR: XML not found or invalid: %s\n", filename);
+    
+    tinyxml2::XMLElement* worldElem = doc.FirstChildElement("world");
+    if (!worldElem) {
+        std::cerr << "ERROR: Invalid XML format - missing 'world' element" << std::endl;
+        return;
     }
+    
+    // Processar configurações da janela
+    tinyxml2::XMLElement* windowElem = worldElem->FirstChildElement("window");
+    if (windowElem) {
+        w_size[0] = windowElem->IntAttribute("width", 800);
+        w_size[1] = windowElem->IntAttribute("height", 600);
+        std::cout << "Window size: " << w_size[0] << "x" << w_size[1] << std::endl;
+    } else {
+        w_size[0] = 800;
+        w_size[1] = 600;
+        std::cout << "Using default window size: 800x600" << std::endl;
+    }
+    
+    // Processar configurações da câmera
+    tinyxml2::XMLElement* cameraElem = worldElem->FirstChildElement("camera");
+    if (cameraElem) {
+        tinyxml2::XMLElement* posElem = cameraElem->FirstChildElement("position");
+        if (posElem) {
+            c_pos[0] = posElem->FloatAttribute("x", 0.0f);
+            c_pos[1] = posElem->FloatAttribute("y", 0.0f);
+            c_pos[2] = posElem->FloatAttribute("z", 5.0f);
+            std::cout << "Camera position: [" << c_pos[0] << ", " << c_pos[1] << ", " << c_pos[2] << "]" << std::endl;
+        }
+        
+        tinyxml2::XMLElement* lookAtElem = cameraElem->FirstChildElement("lookAt");
+        if (lookAtElem) {
+            c_lAt[0] = lookAtElem->FloatAttribute("x", 0.0f);
+            c_lAt[1] = lookAtElem->FloatAttribute("y", 0.0f);
+            c_lAt[2] = lookAtElem->FloatAttribute("z", 0.0f);
+            std::cout << "Camera lookAt: [" << c_lAt[0] << ", " << c_lAt[1] << ", " << c_lAt[2] << "]" << std::endl;
+        }
+        
+        tinyxml2::XMLElement* upElem = cameraElem->FirstChildElement("up");
+        if (upElem) {
+            c_lUp[0] = upElem->FloatAttribute("x", 0.0f);
+            c_lUp[1] = upElem->FloatAttribute("y", 1.0f);
+            c_lUp[2] = upElem->FloatAttribute("z", 0.0f);
+            std::cout << "Camera up: [" << c_lUp[0] << ", " << c_lUp[1] << ", " << c_lUp[2] << "]" << std::endl;
+        }
+        
+        tinyxml2::XMLElement* projElem = cameraElem->FirstChildElement("projection");
+        if (projElem) {
+            c_proj[0] = projElem->FloatAttribute("fov", 60.0f);
+            c_proj[1] = projElem->FloatAttribute("near", 1.0f);
+            c_proj[2] = projElem->FloatAttribute("far", 1000.0f);
+            std::cout << "Projection: fov=" << c_proj[0] << ", near=" << c_proj[1] << ", far=" << c_proj[2] << std::endl;
+        }
+    } else {
+        // Valores padrão
+        c_pos[0] = 0.0f; c_pos[1] = 0.0f; c_pos[2] = 5.0f;
+        c_lAt[0] = 0.0f; c_lAt[1] = 0.0f; c_lAt[2] = 0.0f;
+        c_lUp[0] = 0.0f; c_lUp[1] = 1.0f; c_lUp[2] = 0.0f;
+        c_proj[0] = 60.0f; c_proj[1] = 1.0f; c_proj[2] = 1000.0f;
+        std::cout << "Using default camera settings" << std::endl;
+    }
+    
+    // Configuração da câmera
+    radius = sqrt(pow(c_pos[0], 2) + pow(c_pos[1], 2) + pow(c_pos[2], 2));
+    dist = sqrt(pow(c_pos[0], 2) + pow(c_pos[2], 2));
+    
+    if (dist > EPSILON) {
+        angleAlpha = acos(c_pos[2] / dist);
+        if (c_pos[0] < 0) angleAlpha = -angleAlpha;
+    } else {
+        angleAlpha = 0;
+    }
+    
+    if (radius > EPSILON) {
+        angleBeta = asin(c_pos[1] / radius);
+    } else {
+        angleBeta = 0;
+    }
+    
+    // Liberar memória anterior se existir
+    if (group != nullptr) {
+        // Aqui deveria ter uma função para liberar recursivamente os grupos
+        // mas vamos simplificar
+        free(group);
+        group = nullptr;
+    }
+    
+    // Contar grupos principais
+    int groupCount = 0;
+    for (tinyxml2::XMLElement* groupElem = worldElem->FirstChildElement("group");
+         groupElem != nullptr;
+         groupElem = groupElem->NextSiblingElement("group")) {
+        groupCount++;
+    }
+    
+    if (groupCount == 0) {
+        std::cerr << "ERROR: No groups found in XML" << std::endl;
+        return;
+    }
+    
+    std::cout << "Found " << groupCount << " main groups" << std::endl;
+    
+    // Alocar memória para os grupos principais
+    group = (Group*)malloc(sizeof(Group) * groupCount);
+    if (!group) {
+        std::cerr << "ERROR: Memory allocation failed for main groups" << std::endl;
+        return;
+    }
+    
+    nGroup = groupCount;
+    
+    // Processar grupos principais
+    int index = 0;
+    tinyxml2::XMLElement* groupElem = worldElem->FirstChildElement("group");
+    
+    while (groupElem && index < groupCount) {
+        group[index] = (Group)malloc(sizeof(struct group));
+        if (!group[index]) {
+            std::cerr << "ERROR: Memory allocation failed for main group " << index << std::endl;
+        } else {
+            std::cout << "Processing main group " << index << std::endl;
+            readXMLaux(group[index], groupElem);
+        }
+        
+        groupElem = groupElem->NextSiblingElement("group");
+        index++;
+    }
+    
+    std::cout << "XML parsing complete" << std::endl;
 }
 
 // Função para processar eventos do teclado
