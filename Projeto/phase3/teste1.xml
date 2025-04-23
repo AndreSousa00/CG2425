@@ -1,0 +1,206 @@
+<world>
+    <window width="1200" height="900" />
+    <camera>
+        <!-- Positioned further back and slightly elevated -->
+        <position x="0" y="60" z="200" /> 
+        <lookAt x="0" y="0" z="0" />
+        <up x="0" y="1" z="0" />
+        <!-- Increased far plane to see distant planets -->
+        <projection fov="60" near="1" far="5000" /> 
+    </camera>
+
+    <group> <!-- Sun -->
+        <transform>
+            <!-- Scaled Sun (capped for visibility) -->
+            <scale x="5" y="5" z="5" /> 
+            <!-- Slow rotation -->
+            <rotate time="100" x="0" y="1" z="0" /> 
+        </transform>
+        <models>
+            <model file="solarSystem/Sun.3d" />
+        </models>
+
+        <group> <!-- Mercury -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 8.8) -->
+                <translate time="880" align="true"> 
+                    <point x="8.8" y="0" z="0" />
+                    <point x="0" y="0" z="-8.8" />
+                    <point x="-8.8" y="0" z="0" />
+                    <point x="0" y="0" z="8.8" />
+                </translate>
+                <!-- Scaled Size (approx 0.19) -->
+                <scale x="0.19" y="0.19" z="0.19" /> 
+                <!-- Self-rotation -->
+                <rotate time="580" x="0" y="1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Mercury.3d" />
+            </models>
+        </group>
+
+        <group> <!-- Venus -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 12.2) -->
+                <translate time="2250" align="true"> 
+                    <point x="12.2" y="0" z="0" />
+                    <point x="0" y="0" z="-12.2" />
+                    <point x="-12.2" y="0" z="0" />
+                    <point x="0" y="0" z="12.2" />
+                </translate>
+                <!-- Scaled Size (approx 0.475) -->
+                <scale x="0.475" y="0.475" z="0.475" /> 
+                 <!-- Self-rotation (retrograde and slow) -->
+                <rotate time="-2430" x="0" y="1" z="0" />
+            </transform>
+            <models>
+                <model file="solarSystem/Venus.3d" />
+            </models>
+        </group>
+
+        <group> <!-- Earth -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (15.0) -->
+                <translate time="3650" align="true"> 
+                    <point x="15" y="0" z="0" />
+                    <point x="0" y="0" z="-15" />
+                    <point x="-15" y="0" z="0" />
+                    <point x="0" y="0" z="15" />
+                </translate>
+                <!-- Scaled Size (0.5) -->
+                <scale x="0.5" y="0.5" z="0.5" /> 
+                <!-- Self-rotation -->
+                <rotate time="10" x="0" y="1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Earth.3d" />
+            </models>
+            
+            <group> <!-- Moon -->
+                 <transform>
+                     <!-- Orbit around Earth (relative) + Slower -->
+                     <translate time="270" align="true"> 
+                         <point x="1.5" y="0" z="0" />
+                         <point x="0" y="0.1" z="-1.5" /> <!-- Slight inclination -->
+                         <point x="-1.5" y="0" z="0" />
+                         <point x="0" y="-0.1" z="1.5" />
+                     </translate>
+                     <!-- Scaled Size (approx 0.135) -->
+                     <scale x="0.135" y="0.135" z="0.135" /> 
+                 </transform>
+                 <models>
+                     <model file="solarSystem/Moon.3d" />
+                 </models>
+            </group>
+        </group>
+
+        <group> <!-- Mars -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 19.0) -->
+                <translate time="6870" align="true"> 
+                    <point x="19" y="0" z="0" />
+                    <point x="0" y="0" z="-19" />
+                    <point x="-19" y="0" z="0" />
+                    <point x="0" y="0" z="19" />
+                </translate>
+                <!-- Scaled Size (approx 0.265) -->
+                <scale x="0.265" y="0.265" z="0.265" /> 
+                <!-- Self-rotation -->
+                <rotate time="10.3" x="0" y="1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Mars.3d" />
+            </models>
+        </group>
+
+        <group> <!-- Jupiter -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 36.8) -->
+                <translate time="43330" align="true"> 
+                    <point x="36.8" y="0" z="0" />
+                    <point x="0" y="0" z="-36.8" />
+                    <point x="-36.8" y="0" z="0" />
+                    <point x="0" y="0" z="36.8" />
+                </translate>
+                <!-- Scaled Size (approx 5.6) -->
+                <scale x="5.6" y="5.6" z="5.6" /> 
+                <!-- Self-rotation (fast) -->
+                <rotate time="4.1" x="0" y="1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Jupiter.3d" />
+            </models>
+        </group>
+
+        <group> <!-- Saturn -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 51.0) -->
+                <translate time="107590" align="true"> 
+                    <point x="51" y="0" z="0" />
+                    <point x="0" y="0" z="-51" />
+                    <point x="-51" y="0" z="0" />
+                    <point x="0" y="0" z="51" />
+                </translate>
+                <!-- Scaled Size (approx 4.7) -->
+                <scale x="4.7" y="4.7" z="4.7" /> 
+                <!-- Self-rotation -->
+                <rotate time="4.4" x="0" y="1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Saturn.3d" />
+            </models>
+            
+            <group> <!-- Saturn's Rings -->
+                 <transform>
+                     <!-- Scale the rings appropriately relative to Saturn's scale -->
+                     <scale x="1.0" y="1.0" z="1.0" /> 
+                     <!-- Tilt the rings -->
+                     <rotate angle="20" x="1" y="0" z="0.5" /> 
+                 </transform>
+                 <models>
+                     <!-- Assuming torus.3d was generated with appropriate inner/outer radii for the scale -->
+                     <model file="solarSystem/torus.3d" />
+                 </models>
+            </group>
+        </group>
+
+        <group> <!-- Uranus -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 76.0) -->
+                <translate time="306870" align="true"> 
+                    <point x="76" y="0" z="0" />
+                    <point x="0" y="0" z="-76" />
+                    <point x="-76" y="0" z="0" />
+                    <point x="0" y="0" z="76" />
+                </translate>
+                <!-- Scaled Size (approx 2.0) -->
+                <scale x="2.0" y="2.0" z="2.0" /> 
+                <!-- Self-rotation (retrograde and tilted on its side) -->
+                <rotate time="-7.2" x="1" y="0.1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Uranus.3d" />
+            </models>
+        </group>
+
+        <group> <!-- Neptune -->
+            <transform>
+                <!-- Slower Orbit (time increased) + Scaled Radius (approx 96.0) -->
+                <translate time="601900" align="true"> 
+                    <point x="96" y="0" z="0" />
+                    <point x="0" y="0" z="-96" />
+                    <point x="-96" y="0" z="0" />
+                    <point x="0" y="0" z="96" />
+                </translate>
+                <!-- Scaled Size (approx 1.94) -->
+                <scale x="1.94" y="1.94" z="1.94" /> 
+                <!-- Self-rotation -->
+                <rotate time="6.7" x="0" y="1" z="0" /> 
+            </transform>
+            <models>
+                <model file="solarSystem/Neptune.3d" />
+            </models>
+        </group>
+
+    </group> <!-- End Sun Group -->
+</world>
